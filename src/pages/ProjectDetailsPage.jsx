@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useFormBuilder } from '../hooks/useFormBuilder';
 import { useProjects } from '../hooks/useProjects';
+import { useToast } from '../contexts/ToastContext';
 import { setBuilderReturnProjectId } from '../utils/builderNavigation';
 
 function ProjectDetailsPage() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { deleteForm, forms, loadForm } = useFormBuilder();
   const { getProjectById, updateProject } = useProjects();
   const project = getProjectById(projectId);
@@ -61,17 +63,17 @@ function ProjectDetailsPage() {
   };
 
   const handleDeleteForm = (formId) => {
-    if (window.confirm('Delete this form?')) {
-      deleteForm(formId);
-    }
+    const form = savedForms.find((f) => f.id === formId);
+    deleteForm(formId);
+    showToast(form ? `Form "${form.name}" deleted.` : 'Form deleted.', 'success');
   };
 
   const handleDeleteSampleForm = (formId) => {
-    if (window.confirm('Delete this sample form?')) {
-      updateProject(project.id, {
-        sampleForms: sampleForms.filter((form) => form.id !== formId),
-      });
-    }
+    const form = sampleForms.find((f) => f.id === formId);
+    updateProject(project.id, {
+      sampleForms: sampleForms.filter((form) => form.id !== formId),
+    });
+    showToast(form ? `Sample form "${form.name}" deleted.` : 'Sample form deleted.', 'success');
   };
 
   return (

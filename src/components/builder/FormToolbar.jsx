@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFormBuilder } from '../../hooks/useFormBuilder';
+import { useToast } from '../../contexts/ToastContext';
 
 function FormToolbar() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const {
     activeForm,
     updateFormMeta,
@@ -14,15 +16,13 @@ function FormToolbar() {
   } = useFormBuilder();
   const [prettyMode] = useState(true);
   const [showJsonStudio, setShowJsonStudio] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const exportedJson = useMemo(() => exportCurrentFormJson(prettyMode), [exportCurrentFormJson, prettyMode]);
   const projectId = activeForm.metadata?.projectId;
 
   const handleSave = () => {
     saveActiveForm('Form saved');
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2200);
+    showToast('Form saved successfully.', 'success');
   };
 
   const handleSaveAndReturn = () => {
@@ -44,12 +44,6 @@ function FormToolbar() {
   return (
     <div className="card border-0 shadow-sm">
       <div className="card-body d-flex flex-column gap-3">
-        {saved && (
-          <div className="save-toast" role="status">
-            <i className="bi bi-check-circle-fill" />
-            Form saved successfully.
-          </div>
-        )}
         <div className="row g-3 align-items-center">
           <div className="col-12 col-xl-4">
             <input

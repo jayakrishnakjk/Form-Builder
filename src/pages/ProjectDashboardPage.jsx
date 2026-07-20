@@ -4,11 +4,13 @@ import AddProjectDialog from '../components/projects/AddProjectDialog';
 import ProjectTable from '../components/projects/ProjectTable';
 import { useFormBuilder } from '../hooks/useFormBuilder';
 import { useProjects } from '../hooks/useProjects';
+import { useToast } from '../contexts/ToastContext';
 
 function ProjectDashboardPage() {
   const navigate = useNavigate();
   const { addProject, deleteProject, projects, updateProject } = useProjects();
   const { forms } = useFormBuilder();
+  const { showToast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
 
@@ -33,9 +35,14 @@ function ProjectDashboardPage() {
   };
 
   const handleDelete = (projectId) => {
-    if (window.confirm('Delete this project? Forms are not deleted.')) {
-      deleteProject(projectId);
-    }
+    deleteProject(projectId);
+    const project = projects.find((p) => p.id === projectId);
+    showToast(
+      project
+        ? `Project "${project.name}" deleted successfully.`
+        : 'Project deleted successfully.',
+      'success',
+    );
   };
 
   const getProjectForms = (project) =>
@@ -64,7 +71,6 @@ function ProjectDashboardPage() {
         <div>
           <span className="eyebrow">Workspace overview</span> 
           <h4 className="dashboard-title">Project Dashboard</h4>
-          {/* <p className="dashboard-subtitle">Manage project containers, brand settings, and form collections in one place.</p> */}
         </div>
         <button className="btn btn-primary" onClick={openCreateDialog} type="button">
           <i className="bi bi-plus-circle me-2" />
