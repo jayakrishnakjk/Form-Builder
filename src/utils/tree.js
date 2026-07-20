@@ -129,6 +129,32 @@ export const appendNodeToParent = (nodes = [], parentId, newNode) => {
   });
 };
 
+export const insertNodeToParentAtIndex = (nodes = [], parentId, newNode, index = 0) => {
+  if (parentId === 'root') {
+    const next = [...nodes];
+    next.splice(Math.max(0, index), 0, newNode);
+    return next;
+  }
+
+  return nodes.map((node) => {
+    if (node.id === parentId) {
+      const children = [...(node.children || [])];
+      children.splice(Math.max(0, Math.min(index, children.length)), 0, newNode);
+      return {
+        ...node,
+        children,
+      };
+    }
+    if (node.children) {
+      return {
+        ...node,
+        children: insertNodeToParentAtIndex(node.children, parentId, newNode, index),
+      };
+    }
+    return node;
+  });
+};
+
 export const extractNodeById = (nodes = [], id) => {
   let removedNode = null;
 

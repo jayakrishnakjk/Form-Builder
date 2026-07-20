@@ -4,14 +4,17 @@ import { useFormBuilder } from '../../hooks/useFormBuilder';
 function Canvas() {
   const { activeForm, setSelectedFieldId, createField, moveFieldToParent } = useFormBuilder();
 
-  const handleDrop = (event, parentId = 'root') => {
+  const handleDrop = (event, parentId = 'root', dropOptions = {}) => {
     event.preventDefault();
     const payload = JSON.parse(event.dataTransfer.getData('application/json'));
     if (payload.mode === 'create') {
-      createField(payload.type, parentId, { columnCount: payload.columnCount });
+      createField(payload.type, parentId, {
+        columnCount: payload.columnCount,
+        ...dropOptions,
+      });
     }
     if (payload.mode === 'move') {
-      moveFieldToParent(payload.fieldId, parentId);
+      moveFieldToParent(payload.fieldId, parentId, dropOptions);
     }
   };
 

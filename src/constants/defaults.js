@@ -165,6 +165,26 @@ export const getRemainingRowWidth = (children = []) => {
   return Math.max(0, 12 - used);
 };
 
+/**
+ * When a row was built with 2Column/3Column, metadata.columns holds each slot width.
+ * After removing columns, return that template so empty slots can show separate drop zones.
+ */
+export const getRowSlotTemplate = (row) => {
+  const template = row?.metadata?.columns;
+  const children = row?.children || [];
+  if (!Array.isArray(template) || template.length === 0) {
+    return null;
+  }
+  const total = template.reduce((sum, width) => sum + (Number(width) || 0), 0);
+  if (total !== 12 || children.length >= template.length) {
+    return null;
+  }
+  const matchesTemplate = children.every(
+    (child, index) => (Number(child.width) || 6) === (Number(template[index]) || 6),
+  );
+  return matchesTemplate ? template : null;
+};
+
 /** Create N equal-width Bootstrap columns (12-grid). */
 export const createEqualColumns = (count = 2) => {
   const safeCount = Math.max(1, Number(count) || 1);

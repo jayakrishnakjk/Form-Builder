@@ -6,7 +6,8 @@ import { useFormBuilder } from '../hooks/useFormBuilder';
 function PreviewPage() {
   const { formId } = useParams();
   const navigate = useNavigate();
-  const { forms, activeForm, loadForm, getPreviewDraft } = useFormBuilder();
+  const { forms, activeForm, loadForm, getPreviewDraft, returnToBuilderFromPreview } =
+    useFormBuilder();
 
   useEffect(() => {
     if (formId) {
@@ -29,6 +30,7 @@ function PreviewPage() {
       navigate('/dashboard');
       return;
     }
+    returnToBuilderFromPreview(targetId);
     // Replace preview entry so Create Form → Back goes to project, not Preview.
     navigate(`/builder/${targetId}`, { replace: true });
   };

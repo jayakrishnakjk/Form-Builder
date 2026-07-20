@@ -24,6 +24,7 @@ function BuilderPage() {
   } = useFormBuilder();
   const formsRef = useRef(forms);
   const sessionFormIdRef = useRef(null);
+  const previewDraftAppliedForRef = useRef(null);
   formsRef.current = forms;
 
   // Create once for /builder/new
@@ -55,15 +56,17 @@ function BuilderPage() {
     navigate(`/builder/${newId}`, { replace: true });
   }, [beginEditSession, createForm, formId, navigate, searchParams]);
 
-  // Load form by id
+  // Load form by id (apply preview draft at most once per return from Preview).
   useEffect(() => {
     if (!formId || formId === 'new') {
+      previewDraftAppliedForRef.current = null;
       return;
     }
 
     const draft = getPreviewDraft();
-    if (draft?.id === formId) {
+    if (draft?.id === formId && previewDraftAppliedForRef.current !== formId) {
       applyPreviewDraftToForms();
+      previewDraftAppliedForRef.current = formId;
     }
 
     const match =
@@ -82,7 +85,9 @@ function BuilderPage() {
       beginEditSession(formId);
       sessionFormIdRef.current = formId;
     }
-  }, [applyPreviewDraftToForms, beginEditSession, formId, getPreviewDraft, loadForm]);
+    // Intentionally depend only on formId — context handlers are stable enough for one-shot load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formId]);
 
   useEffect(() => {
     const projectId = activeForm?.metadata?.projectId || searchParams.get('projectId');

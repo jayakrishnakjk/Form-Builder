@@ -1,4 +1,5 @@
 import { CONTAINER_TYPES } from '../../constants/fieldCatalog';
+import { getRowSlotTemplate } from '../../constants/defaults';
 import { useFormBuilder } from '../../hooks/useFormBuilder';
 
 const renderNodePreview = (node) => {
@@ -60,12 +61,33 @@ function CanvasNode({ node, onDropNode }) {
   const isRow = node.type === 'row';
   const isColumn = node.type === 'column';
   const isSelected = selectedFieldId === node.id;
+  const rowSlotTemplate = isRow ? getRowSlotTemplate(node) : null;
   const remainingRowWidth = isRow
     ? Math.max(
         0,
         12 - (node.children || []).reduce((sum, child) => sum + (Number(child.width) || 6), 0),
       )
     : 0;
+
+  const renderRowColumnSlot = (slotWidth, slotIndex) => (
+    <div className={`col-12 col-md-${slotWidth}`} key={`${node.id}-add-slot-${slotIndex}`}>
+      <div
+        className="row-column-slot"
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onDrop={(event) => {
+          event.stopPropagation();
+          onDropNode(event, node.id, { columnWidth: slotWidth, insertAtIndex: slotIndex });
+        }}
+        title="Drop Column here"
+      >
+        <i className="bi bi-plus-lg" />
+        <span>Drop Column</span>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -143,32 +165,33 @@ function CanvasNode({ node, onDropNode }) {
           {node.children?.length ? (
             isRow ? (
               <div className="row g-2 builder-row-grid">
-                {node.children.map((child) => (
-                  <div
-                    className={`col-12 col-md-${child.width || Math.floor(12 / node.children.length) || 6}`}
-                    key={child.id}
-                  >
-                    <CanvasNode node={child} onDropNode={onDropNode} />
-                  </div>
-                ))}
-                {remainingRowWidth > 0 && (
-                  <div className={`col-12 col-md-${remainingRowWidth}`} key={`${node.id}-add-slot`}>
-                    <div
-                      className="row-column-slot"
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                      }}
-                      onDrop={(event) => {
-                        event.stopPropagation();
-                        onDropNode(event, node.id);
-                      }}
-                      title="Drop Column here"
-                    >
-                      <i className="bi bi-plus-lg" />
-                      <span>Drop Column</span>
-                    </div>
-                  </div>
+                {rowSlotTemplate ? (
+                  rowSlotTemplate.map((slotWidth, slotIndex) => {
+                    const child = node.children[slotIndex];
+                    if (child) {
+                      return (
+                        <div
+                          className={`col-12 col-md-${child.width || slotWidth}`}
+                          key={child.id}
+                        >
+                          <CanvasNode node={child} onDropNode={onDropNode} />
+                        </div>
+                      );
+                    }
+                    return renderRowColumnSlot(slotWidth, slotIndex);
+                  })
+                ) : (
+                  <>
+                    {node.children.map((child) => (
+                      <div
+                        className={`col-12 col-md-${child.width || Math.floor(12 / node.children.length) || 6}`}
+                        key={child.id}
+                      >
+                        <CanvasNode node={child} onDropNode={onDropNode} />
+                      </div>
+                    ))}
+                    {remainingRowWidth > 0 && renderRowColumnSlot(remainingRowWidth, node.children.length)}
+                  </>
                 )}
               </div>
             ) : (

@@ -20,6 +20,7 @@ import {
   duplicateNodeById,
   extractNodeById,
   findNode,
+  insertNodeToParentAtIndex,
   moveNodeInSiblings,
   removeNodeById,
   updateNodeById,
@@ -135,18 +136,19 @@ export function FormBuilderProvider({ children }) {
   const applyPreviewDraftToForms = () => {
     const draft = previewDraftRef.current;
     if (!draft?.id) {
-      return;
+      return false;
     }
+    previewDraftRef.current = null;
+    const nextDraft = syncFormFields(cloneDeep(draft));
     setForms((current) => {
-      const exists = current.some((form) => form.id === draft.id);
+      const exists = current.some((form) => form.id === nextDraft.id);
       if (!exists) {
-        return [syncFormFields(cloneDeep(draft)), ...current];
+        return [nextDraft, ...current];
       }
-      return current.map((form) =>
-        form.id === draft.id ? syncFormFields(cloneDeep(draft)) : form,
-      );
+      return current.map((form) => (form.id === nextDraft.id ? nextDraft : form));
     });
-    setActiveFormId(draft.id);
+    setActiveFormId(nextDraft.id);
+    return true;
   };
 
   /** Keep unsaved builder work when leaving Preview back to Create Form. */
@@ -193,7 +195,7 @@ export function FormBuilderProvider({ children }) {
   };
 
   const loadForm = (id) => {
-    setActiveFormId(id);
+    setActiveFormId((current) => (current === id ? current : id));
     setSelectedFieldId(null);
   };
 
@@ -317,7 +319,7 @@ export function FormBuilderProvider({ children }) {
             ...node,
             metadata: {
               ...node.metadata,
-              columns: (node.children || []).map((child) => child.width || 6),
+              columns: columns.map((column) => column.width || 6),
             },
           }));
           return {
@@ -340,19 +342,31 @@ export function FormBuilderProvider({ children }) {
       const parent =
         parentId === 'root' ? null : findNode(activeForm.layout.children, parentId)?.node;
       if (parent?.type === 'row') {
+        const slotWidth = Number(options.columnWidth);
         const remaining = getRemainingRowWidth(parent.children);
-        if (remaining > 0) {
+        if (slotWidth > 0) {
+          field.width = slotWidth;
+          field.label = `Column ${(Number(options.insertAtIndex) || parent.children?.length || 0) + 1}`;
+        } else if (remaining > 0) {
           field.width = remaining;
           field.label = `Column ${(parent.children?.length || 0) + 1}`;
         }
       }
     }
 
+    const insertAtIndex =
+      options.insertAtIndex === undefined || options.insertAtIndex === null
+        ? null
+        : Number(options.insertAtIndex);
+
     updateActiveForm((form) => ({
       ...form,
       layout: {
         ...form.layout,
-        children: appendNodeToParent(form.layout.children, parentId, field),
+        children:
+          insertAtIndex !== null && !Number.isNaN(insertAtIndex) && parentId !== 'root'
+            ? insertNodeToParentAtIndex(form.layout.children, parentId, field, insertAtIndex)
+            : appendNodeToParent(form.layout.children, parentId, field),
       },
     }));
     setSelectedFieldId(field.id);
@@ -402,7 +416,7 @@ export function FormBuilderProvider({ children }) {
     }));
   };
 
-  const moveFieldToParent = (fieldId, targetParentId = 'root') => {
+  const moveFieldToParent = (fieldId, targetParentId = 'root', options = {}) => {
     if (fieldId === targetParentId) {
       return;
     }
@@ -418,18 +432,31 @@ export function FormBuilderProvider({ children }) {
         const parent =
           targetParentId === 'root' ? null : findNode(tree, targetParentId)?.node;
         if (parent?.type === 'row') {
+          const slotWidth = Number(options.columnWidth);
           const remaining = getRemainingRowWidth(parent.children);
-          if (remaining > 0) {
+          if (slotWidth > 0) {
+            nodeToAppend = { ...removedNode, width: slotWidth };
+          } else if (remaining > 0) {
             nodeToAppend = { ...removedNode, width: remaining };
           }
         }
       }
 
+      const insertAtIndex =
+        options.insertAtIndex === undefined || options.insertAtIndex === null
+          ? null
+          : Number(options.insertAtIndex);
+
+      const children =
+        insertAtIndex !== null && !Number.isNaN(insertAtIndex) && targetParentId !== 'root'
+          ? insertNodeToParentAtIndex(tree, targetParentId, nodeToAppend, insertAtIndex)
+          : appendNodeToParent(tree, targetParentId, nodeToAppend);
+
       return {
         ...form,
         layout: {
           ...form.layout,
-          children: appendNodeToParent(tree, targetParentId, nodeToAppend),
+          children,
         },
       };
     });
