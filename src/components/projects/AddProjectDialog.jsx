@@ -90,7 +90,7 @@ function AddProjectDialog({ show, onCancel, onSubmit, project }) {
         <div className="modal-dialog modal-dialog-centered modal-lg">
           <form className="modal-content border-0 shadow" onSubmit={handleSubmit}>
             <div className="modal-header">
-              <h2 className="modal-title h5" id="projectDialogTitle">
+              <h2 className="app-header-title" id="projectDialogTitle">
                 {project ? 'Edit Project' : 'Create New Project'}
               </h2>
               <button className="btn-close" onClick={onCancel} type="button" aria-label="Close" />
@@ -200,7 +200,7 @@ function AddProjectDialog({ show, onCancel, onSubmit, project }) {
                 Cancel
               </button>
               <button className="btn btn-primary" type="submit">
-                {project ? 'Save Project' : 'Create Project'}
+                {project ? 'Save' : 'Submit'}
               </button>
             </div>
           </form>

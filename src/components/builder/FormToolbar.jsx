@@ -74,7 +74,7 @@ function FormToolbar() {
               placeholder="Form Description"
             /> */}
           </div>
-          <div className="col-12 col-xl-5 d-flex">
+          <div className="col-12 col-xl-5 d-flex gap-2">
             <button className="btn btn-primary" onClick={handleSave} type="button">
               <i className="bi bi-save me-2" />Save
             </button>

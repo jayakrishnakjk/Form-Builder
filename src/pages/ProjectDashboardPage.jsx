@@ -62,13 +62,13 @@ function ProjectDashboardPage() {
     <div className="page-stack">
       <div className="dashboard-hero">
         <div>
-          <span className="eyebrow">Workspace overview</span>
+          <span className="eyebrow">Workspace overview</span> 
           <h4 className="dashboard-title">Project Dashboard</h4>
           {/* <p className="dashboard-subtitle">Manage project containers, brand settings, and form collections in one place.</p> */}
         </div>
         <button className="btn btn-primary" onClick={openCreateDialog} type="button">
           <i className="bi bi-plus-circle me-2" />
-          Add Project
+          Create Project
         </button>
       </div>
 

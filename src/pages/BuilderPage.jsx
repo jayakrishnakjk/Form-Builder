@@ -108,7 +108,7 @@ function BuilderPage() {
         </div>
         <div className="col-12 col-xl-9 d-flex flex-column gap-3">
           <Canvas />
-          <JsonImportCard />
+          {!activeForm?.layout?.children?.length && <JsonImportCard />}
         </div>
         <div className="col-12 col-xl-3">
           <PropertyPanel />

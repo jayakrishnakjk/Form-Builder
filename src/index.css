@@ -429,7 +429,7 @@ a:hover {
 }
 
 .canvas-dropzone {
-  min-height: 70vh;
+  min-height: 5vh;
   border: 2px dashed rgba(13, 110, 253, 0.25);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 252, 0.96)),
@@ -441,6 +441,7 @@ a:hover {
       rgba(13, 110, 253, 0.015) 11px
     );
 }
+
 
 .canvas-node {
   background: #fff;

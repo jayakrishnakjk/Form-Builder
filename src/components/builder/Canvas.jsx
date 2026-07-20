@@ -16,7 +16,7 @@ function Canvas() {
   };
 
   return (
-    <div className="card border-0 shadow-sm h-100">
+    <div className="card border-0 shadow-sm h-20">
       <div className="card-body d-flex flex-column gap-3">
         <div className="d-flex justify-content-between align-items-center">
           <div>
