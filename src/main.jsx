@@ -8,13 +8,16 @@ import './index.css';
 import App from './App';
 import { FormBuilderProvider } from './contexts/FormBuilderContext';
 import { ProjectProvider } from './contexts/ProjectContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <ProjectProvider>
         <FormBuilderProvider>
+          <ToastProvider>
           <App />
+          </ToastProvider>
         </FormBuilderProvider>
       </ProjectProvider>
     </BrowserRouter>

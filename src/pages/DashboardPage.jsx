@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useFormBuilder } from '../hooks/useFormBuilder';
+import { useToast } from '../contexts/ToastContext';
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const {
     forms,
     createForm,
@@ -16,6 +18,7 @@ function DashboardPage() {
 
   const handleCreate = () => {
     const newId = createForm({ name: 'Form Name' });
+    showToast('Form created successfully.', 'success');
     navigate(`/builder/${newId}`);
   };
 
@@ -30,7 +33,7 @@ function DashboardPage() {
             <button className="btn btn-primary" onClick={handleCreate} type="button">
               <i className="bi bi-plus-circle me-2" />Create Form
             </button>
-            <button className="btn btn-outline-secondary" onClick={installSamples} type="button">
+            <button className="btn btn-outline-secondary" onClick={() => { installSamples(); showToast('Sample forms reset successfully.', 'success'); }} type="button">
               <i className="bi bi-arrow-clockwise me-2" />Reset Sample Forms
             </button>
           </div>
@@ -78,16 +81,16 @@ function DashboardPage() {
                   >
                     Edit Form
                   </button>
-                  <button className="btn btn-outline-secondary btn-sm" onClick={() => duplicateForm(form.id)} type="button">
+                  <button className="btn btn-outline-secondary btn-sm" onClick={() => { duplicateForm(form.id); showToast(`Form "${form.name}" duplicated.`, 'success'); }} type="button">
                     Duplicate
                   </button>
-                  <button className="btn btn-outline-danger btn-sm" onClick={() => deleteForm(form.id)} type="button">
+                  <button className="btn btn-outline-danger btn-sm" onClick={() => { deleteForm(form.id); showToast(`Form "${form.name}" deleted.`, 'success'); }} type="button">
                     Delete
                   </button>
-                  <button className="btn btn-outline-success btn-sm" onClick={() => publishForm(form.id)} type="button">
+                  <button className="btn btn-outline-success btn-sm" onClick={() => { publishForm(form.id); showToast(`Form "${form.name}" published.`, 'success'); }} type="button">
                     Publish
                   </button>
-                  <button className="btn btn-outline-warning btn-sm" onClick={() => draftForm(form.id)} type="button">
+                  <button className="btn btn-outline-warning btn-sm" onClick={() => { draftForm(form.id); showToast(`Form "${form.name}" set to draft.`, 'success'); }} type="button">
                     Draft
                   </button>
                 </div>

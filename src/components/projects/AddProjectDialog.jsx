@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useToast } from '../../contexts/ToastContext';
 
 const INITIAL_FORM = {
   name: '',
@@ -10,6 +11,7 @@ const INITIAL_FORM = {
 };
 
 function AddProjectDialog({ show, onCancel, onSubmit, project }) {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
 
@@ -82,6 +84,12 @@ function AddProjectDialog({ show, onCancel, onSubmit, project }) {
       return;
     }
     onSubmit(formData);
+    showToast(
+      project
+        ? `Project "${formData.name}" updated successfully.`
+        : `Project "${formData.name}" created successfully.`,
+      'success',
+    );
   };
 
   return (
