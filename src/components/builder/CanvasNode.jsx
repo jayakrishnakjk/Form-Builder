@@ -55,11 +55,13 @@ function CanvasNode({ node, onDropNode }) {
     selectedFieldId,
     setSelectedFieldId,
     deleteField,
+    updateField,
   } = useFormBuilder();
 
   const isContainer = CONTAINER_TYPES.includes(node.type);
   const isRow = node.type === 'row';
   const isColumn = node.type === 'column';
+  const isLayoutContainer = isRow || isColumn;
   const isSelected = selectedFieldId === node.id;
   const rowSlotTemplate = isRow ? getRowSlotTemplate(node) : null;
   const remainingRowWidth = isRow
@@ -105,6 +107,10 @@ function CanvasNode({ node, onDropNode }) {
         setSelectedFieldId(node.id);
       }}
       onDragStart={(event) => {
+        if (event.target.closest('.canvas-node-inline-input')) {
+          event.preventDefault();
+          return;
+        }
         event.dataTransfer.setData('application/json', JSON.stringify({ mode: 'move', fieldId: node.id }));
       }}
     >
@@ -113,14 +119,58 @@ function CanvasNode({ node, onDropNode }) {
           <div className="canvas-node-label">
             {isRow && <i className="bi bi-layout-three-columns text-primary" />}
             {isColumn && <i className="bi bi-square text-primary" />}
-            <span>{node.label || node.type}</span>
+            {isLayoutContainer ? (
+              <span>{node.label || node.type}</span>
+            ) : (
+              <input
+                aria-label="Field label"
+                className="canvas-node-label-input canvas-node-inline-input"
+                onChange={(event) => {
+                  event.stopPropagation();
+                  updateField(node.id, { label: event.target.value });
+                }}
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+                placeholder={node.type}
+                type="text"
+                value={node.label || ''}
+              />
+            )}
             {isColumn && (
               <span className="width-badge">col-md-{node.width || 6}</span>
             )}
           </div>
           <div className="canvas-node-sub">
-            {node.type}
-            {node.objectKey ? ` • ${node.objectKey}` : ''}
+            {isLayoutContainer ? (
+              <>
+                {node.type}
+                {node.objectKey ? ` • ${node.objectKey}` : ''}
+              </>
+            ) : (
+              <span className="canvas-node-sub-editable">
+                <span className="canvas-node-sub-type">{node.type}</span>
+                <span aria-hidden="true" className="canvas-node-sub-sep">
+                  •
+                </span>
+                <input
+                  aria-label="Field object key"
+                  className="canvas-node-sub-input canvas-node-inline-input"
+                  onChange={(event) => {
+                    event.stopPropagation();
+                    const nextKey = event.target.value;
+                    updateField(node.id, { objectKey: nextKey, name: nextKey });
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                  onMouseDown={(event) => event.stopPropagation()}
+                  placeholder="object_key"
+                  spellCheck={false}
+                  type="text"
+                  value={node.objectKey || ''}
+                />
+              </span>
+            )}
           </div>
         </div>
         <button

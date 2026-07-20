@@ -507,11 +507,80 @@ a:hover {
   color: #1f2937;
 }
 
+.canvas-node-label-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.1rem 0.35rem;
+  margin: -0.1rem 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: inherit;
+}
+
+.canvas-node-label-input:hover {
+  border-color: #cfd9ea;
+  background: #fff;
+}
+
+.canvas-node-label-input:focus {
+  outline: none;
+  border-color: #0d6efd;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+}
+
 .canvas-node-sub {
   margin-top: 0.15rem;
   font-size: 0.72rem;
   color: #6b7280;
   word-break: break-all;
+}
+
+.canvas-node-sub-editable {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.canvas-node-sub-type {
+  flex: 0 0 auto;
+}
+
+.canvas-node-sub-sep {
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+
+.canvas-node-sub-input {
+  flex: 1 1 6rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.05rem 0.3rem;
+  margin: -0.05rem 0;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: inherit;
+  color: #475569;
+}
+
+.canvas-node-sub-input:hover {
+  border-color: #cfd9ea;
+  background: #fff;
+}
+
+.canvas-node-sub-input:focus {
+  outline: none;
+  border-color: #0d6efd;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.12);
 }
 
 .width-badge {
