@@ -5,13 +5,13 @@ function LeftSidebar() {
   const { createField } = useFormBuilder();
 
   return (
-    <div className="card border-0 shadow-sm h-100 sticky-xl-top" style={{ top: '90px' }}>
-      <div className="card-body d-flex flex-column gap-3">
-        <div>
-          <h5 className="mb-1">Drag Feilds</h5>
+    <div className="card border-0 shadow-sm h-100 sticky-xl-top builder-field-library" style={{ top: '90px' }}>
+      <div className="card-body d-flex flex-column gap-3 builder-field-library-body">
+        <div className="builder-field-library-header">
+          <h5 className="mb-0">Drag Feilds</h5>
         </div>
 
-        <div className="accordion" id="fieldLibrary">
+        <div className="accordion builder-field-library-accordion" id="fieldLibrary">
           {FIELD_CATALOG.map((group, groupIndex) => (
             <div className="accordion-item" key={group.category}>
               <h2 className="accordion-header">
@@ -24,8 +24,12 @@ function LeftSidebar() {
                   {group.category}
                 </button>
               </h2>
-              <div id={`collapse_${groupIndex}`} className={`accordion-collapse collapse ${groupIndex === 0 ? 'show' : ''}`}>
-                <div className="accordion-body p-2">
+              <div
+                id={`collapse_${groupIndex}`}
+                className={`accordion-collapse collapse ${groupIndex === 0 ? 'show' : ''}`}
+                data-bs-parent="#fieldLibrary"
+              >
+                <div className="accordion-body p-2 builder-field-library-panel-scroll">
                   <div className="row g-2">
                     {group.items.map((item) => (
                       <div className="col-12" key={`${item.type}-${item.label}`}>
