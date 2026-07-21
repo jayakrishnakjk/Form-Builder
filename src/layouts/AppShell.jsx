@@ -126,7 +126,7 @@ function AppShell() {
         <div className="sidebar-brand">
           <span className="sidebar-brand-mark">F</span>
           <span>
-            <span className="sidebar-brand-title">Formbuilder</span>
+            <span className="sidebar-brand-title">FormBuilder</span>
             <span className="sidebar-brand-subtitle">Project Console</span>
           </span>
         </div>

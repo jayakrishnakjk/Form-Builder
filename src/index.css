@@ -483,6 +483,59 @@ a:hover {
   background: linear-gradient(180deg, #ffffff, #f7f9fc);
 }
 
+.canvas-node-settings {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.45rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  line-height: 1;
+}
+
+.canvas-node-settings:hover {
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.1);
+}
+
+.canvas-node-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.canvas-node-required-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.canvas-node-required-toggle:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.canvas-node-required-toggle .form-check-input {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.canvas-node-required-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1;
+}
+
 .canvas-node--row > .canvas-node-header {
   background: linear-gradient(180deg, #eef5ff, #e8f0fb);
   border-bottom-color: #d7e3f4;
@@ -494,6 +547,7 @@ a:hover {
 }
 
 .canvas-node-title {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -743,6 +797,14 @@ a:hover {
 
 .palette-button {
   transition: all 0.2s ease;
+}
+
+.field-options-fetch {
+  background: #f8fafc;
+}
+
+.field-options-fetch .card-body {
+  padding: 0.85rem 1rem;
 }
 
 .builder-field-library {

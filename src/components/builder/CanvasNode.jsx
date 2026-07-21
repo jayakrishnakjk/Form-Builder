@@ -1,6 +1,16 @@
+import { useState } from 'react';
 import { CONTAINER_TYPES } from '../../constants/fieldCatalog';
 import { getRowSlotTemplate } from '../../constants/defaults';
 import { useFormBuilder } from '../../hooks/useFormBuilder';
+import FieldOptionsDialog from './FieldOptionsDialog';
+
+const FIELDS_WITH_OPTIONS = new Set(['radio', 'select', 'multiselect']);
+
+const renderOptionsEmptyHint = () => (
+  <p className="small text-muted mb-0">
+    No options — use <i className="bi bi-gear" /> to add
+  </p>
+);
 
 const renderNodePreview = (node) => {
   if (CONTAINER_TYPES.includes(node.type)) {
@@ -40,6 +50,56 @@ const renderNodePreview = (node) => {
     );
   }
 
+  if (node.type === 'radio') {
+    const options = node.apiBinding?.options || [];
+    if (!options.length) {
+      return renderOptionsEmptyHint();
+    }
+    return (
+      <div className="d-flex flex-column gap-1">
+        {options.map((option, index) => (
+          <div className="form-check mb-0" key={`${option.value}-${index}`}>
+            <input className="form-check-input" disabled type="radio" />
+            <label className="form-check-label small">{option.label}</label>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (node.type === 'select') {
+    const options = node.apiBinding?.options || [];
+    if (!options.length) {
+      return renderOptionsEmptyHint();
+    }
+    return (
+      <select className="form-select form-select-sm" disabled value="">
+        <option value="">Select</option>
+        {options.map((option, index) => (
+          <option key={`${option.value}-${index}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  if (node.type === 'multiselect') {
+    const options = node.apiBinding?.options || [];
+    if (!options.length) {
+      return renderOptionsEmptyHint();
+    }
+    return (
+      <select className="form-select form-select-sm" disabled multiple size={Math.min(4, Math.max(2, options.length))}>
+        {options.map((option, index) => (
+          <option key={`${option.value}-${index}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   return (
     <input
       className="form-control form-control-sm"
@@ -63,6 +123,8 @@ function CanvasNode({ node, onDropNode }) {
   const isColumn = node.type === 'column';
   const isLayoutContainer = isRow || isColumn;
   const isSelected = selectedFieldId === node.id;
+  const hasOptionsEditor = FIELDS_WITH_OPTIONS.has(node.type);
+  const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const rowSlotTemplate = isRow ? getRowSlotTemplate(node) : null;
   const remainingRowWidth = isRow
     ? Math.max(
@@ -107,7 +169,11 @@ function CanvasNode({ node, onDropNode }) {
         setSelectedFieldId(node.id);
       }}
       onDragStart={(event) => {
-        if (event.target.closest('.canvas-node-inline-input')) {
+        if (
+          event.target.closest('.canvas-node-inline-input') ||
+          event.target.closest('.canvas-node-settings') ||
+          event.target.closest('.canvas-node-required-toggle')
+        ) {
           event.preventDefault();
           return;
         }
@@ -173,17 +239,59 @@ function CanvasNode({ node, onDropNode }) {
             )}
           </div>
         </div>
-        <button
-          className="btn btn-sm canvas-node-delete"
-          onClick={(event) => {
-            event.stopPropagation();
-            deleteField(node.id);
-          }}
-          title="Delete"
-          type="button"
-        >
-          <i className="bi bi-trash" />
-        </button>
+        <div className="canvas-node-header-actions">
+          {!isLayoutContainer && (
+            <label
+              className="canvas-node-required-toggle"
+              title="Required field"
+              onClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <input
+                checked={Boolean(node.required || node.validation?.required)}
+                className="form-check-input"
+                onChange={(event) => {
+                  event.stopPropagation();
+                  const required = event.target.checked;
+                  updateField(node.id, {
+                    required,
+                    validation: {
+                      ...(node.validation || {}),
+                      required,
+                    },
+                  });
+                }}
+                type="checkbox"
+              />
+              <span className="canvas-node-required-label">Req</span>
+            </label>
+          )}
+          {hasOptionsEditor && (
+            <button
+              className="btn btn-sm canvas-node-settings"
+              onClick={(event) => {
+                event.stopPropagation();
+                setOptionsDialogOpen(true);
+              }}
+              onMouseDown={(event) => event.stopPropagation()}
+              title={`Edit ${node.type} options`}
+              type="button"
+            >
+              <i className="bi bi-gear" />
+            </button>
+          )}
+          <button
+            className="btn btn-sm canvas-node-delete"
+            onClick={(event) => {
+              event.stopPropagation();
+              deleteField(node.id);
+            }}
+            title="Delete"
+            type="button"
+          >
+            <i className="bi bi-trash" />
+          </button>
+        </div>
       </div>
 
       {!isRow && (
@@ -268,6 +376,29 @@ function CanvasNode({ node, onDropNode }) {
             </div>
           )}
         </div>
+      )}
+      {optionsDialogOpen && (
+        <FieldOptionsDialog
+          apiEndpoint={node.apiBinding?.endpoint || ''}
+          fieldLabel={node.label}
+          fieldType={node.type}
+          labelKey={node.apiBinding?.labelKey || 'label'}
+          onClose={() => setOptionsDialogOpen(false)}
+          onSave={(nextOptions, meta) => {
+            updateField(node.id, {
+              apiBinding: {
+                ...(node.apiBinding || {}),
+                sourceType: 'static',
+                options: nextOptions,
+                endpoint: meta?.endpoint ?? node.apiBinding?.endpoint ?? '',
+                labelKey: meta?.labelKey ?? node.apiBinding?.labelKey ?? 'label',
+                valueKey: meta?.valueKey ?? node.apiBinding?.valueKey ?? 'value',
+              },
+            });
+          }}
+          options={node.apiBinding?.options || []}
+          valueKey={node.apiBinding?.valueKey || 'value'}
+        />
       )}
     </div>
   );
