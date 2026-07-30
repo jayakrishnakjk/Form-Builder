@@ -1047,6 +1047,26 @@ a:hover {
   background: #fcfdff;
 }
 
+.modal-backdrop-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1055;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.modal-backdrop-shell .modal-backdrop {
+  position: fixed;
+  inset: 0;
+}
+
+.field-options-modal-shell .modal-content {
+  user-select: text;
+}
+
 .modal-backdrop-shell .modal {
   z-index: 1060;
 }

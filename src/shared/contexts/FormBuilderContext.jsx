@@ -238,7 +238,7 @@ export function FormBuilderProvider({ children }) {
   };
 
   /** Persist active form immediately (including project association) so it appears after Back. */
-  const saveActiveForm = (note = 'Form saved') => {
+  const persistActiveForm = (note = 'Form saved', { trackVersion = true } = {}) => {
     const projectId =
       activeForm.metadata?.projectId || getBuilderReturnProjectId() || null;
 
@@ -273,16 +273,18 @@ export function FormBuilderProvider({ children }) {
                   isProjectDraft: false,
                 }),
           },
-          versionHistory: [
-            {
-              id: createId('version'),
-              note,
-              version: form.version,
-              updatedAt: new Date().toISOString(),
-              snapshot: cloneDeep(form.layout),
-            },
-            ...(form.versionHistory || []),
-          ].slice(0, 20),
+          versionHistory: trackVersion
+            ? [
+                {
+                  id: createId('version'),
+                  note,
+                  version: form.version,
+                  updatedAt: new Date().toISOString(),
+                  snapshot: cloneDeep(form.layout),
+                },
+                ...(form.versionHistory || []),
+              ].slice(0, 20)
+            : form.versionHistory || [],
         });
       });
 
@@ -297,6 +299,10 @@ export function FormBuilderProvider({ children }) {
       return nextForms;
     });
   };
+
+  const saveActiveForm = (note = 'Form saved') => persistActiveForm(note, { trackVersion: true });
+
+  const autoSaveActiveForm = () => persistActiveForm('Auto-saved', { trackVersion: false });
 
   const createField = (type, parentId = selectedContainerId, options = {}) => {
     const columnCount = Number(options.columnCount) || 0;
@@ -602,6 +608,7 @@ export function FormBuilderProvider({ children }) {
     clearForm,
     saveVersionSnapshot,
     saveActiveForm,
+    autoSaveActiveForm,
     createField,
     updateField,
     deleteField,

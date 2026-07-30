@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { apiClient } from '@/shared/services/apiClient';
+import { useToast } from '@/shared/hooks/useToast';
 
 const cloneOptions = (options = []) =>
   options.map((option) => ({
@@ -12,12 +14,49 @@ const extractOptionsArray = (data) => {
     return data;
   }
   if (data && typeof data === 'object') {
-    const nested = data.data ?? data.results ?? data.items ?? data.options ?? data.records;
+    const nested =
+      data.data ??
+      data.results ??
+      data.items ??
+      data.options ??
+      data.records ??
+      data.todos;
     if (Array.isArray(nested)) {
       return nested;
     }
   }
   return [];
+};
+
+const extractResponseKeys = (items = []) => {
+  const sample = items.find(
+    (item) => item != null && typeof item === 'object' && !Array.isArray(item),
+  );
+  return sample ? Object.keys(sample) : [];
+};
+
+const pickDefaultLabelKey = (keys, currentKey) => {
+  if (currentKey && keys.includes(currentKey)) {
+    return currentKey;
+  }
+  return (
+    keys.find((key) => ['todo', 'label', 'name', 'title'].includes(key)) ||
+    keys.find((key) => typeof key === 'string') ||
+    keys[0] ||
+    'label'
+  );
+};
+
+const pickDefaultValueKey = (keys, currentKey, labelKeyChoice) => {
+  if (currentKey && keys.includes(currentKey)) {
+    return currentKey;
+  }
+  return (
+    keys.find((key) => ['id', 'value'].includes(key)) ||
+    keys.find((key) => key !== labelKeyChoice) ||
+    keys[0] ||
+    'value'
+  );
 };
 
 const mapResponseToOptions = (items, labelKey, valueKey) =>
@@ -47,12 +86,16 @@ function FieldOptionsDialog({
   onSave,
   valueKey: initialValueKey = 'value',
 }) {
+  const { showToast } = useToast();
   const [draft, setDraft] = useState(() => cloneOptions(options));
   const [fetchUrl, setFetchUrl] = useState(apiEndpoint);
   const [labelKey, setLabelKey] = useState(initialLabelKey);
   const [valueKey, setValueKey] = useState(initialValueKey);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchError, setFetchError] = useState('');
+  const [fetchedItems, setFetchedItems] = useState([]);
+  const [responseKeys, setResponseKeys] = useState([]);
+  const [showOptionsList, setShowOptionsList] = useState(() => options.length > 0);
 
   useEffect(() => {
     setDraft(cloneOptions(options));
@@ -86,6 +129,40 @@ function FieldOptionsDialog({
     setDraft((current) => current.filter((_, rowIndex) => rowIndex !== index));
   };
 
+  const applyKeyMapping = (items, nextLabelKey, nextValueKey) => {
+    setDraft(
+      mapResponseToOptions(
+        items,
+        nextLabelKey.trim() || 'label',
+        nextValueKey.trim() || 'value',
+      ),
+    );
+  };
+
+  const handleLabelKeyChange = (nextLabelKey) => {
+    setLabelKey(nextLabelKey);
+    if (fetchedItems.length && showOptionsList) {
+      applyKeyMapping(fetchedItems, nextLabelKey, valueKey);
+    }
+  };
+
+  const handleValueKeyChange = (nextValueKey) => {
+    setValueKey(nextValueKey);
+    if (fetchedItems.length && showOptionsList) {
+      applyKeyMapping(fetchedItems, labelKey, nextValueKey);
+    }
+  };
+
+  const handleShowMappedOptions = () => {
+    if (!fetchedItems.length) {
+      return;
+    }
+    applyKeyMapping(fetchedItems, labelKey, valueKey);
+    setShowOptionsList(true);
+  };
+
+  const shouldShowOptionsTable = !fetchedItems.length || showOptionsList;
+
   const handleFetchData = async () => {
     const url = fetchUrl.trim();
     if (!url) {
@@ -103,7 +180,17 @@ function FieldOptionsDialog({
         setFetchError('No list found in the API response. Expected a JSON array or { data: [...] }.');
         return;
       }
-      setDraft(mapResponseToOptions(items, labelKey.trim() || 'label', valueKey.trim() || 'value'));
+
+      const keys = extractResponseKeys(items);
+      const nextLabelKey = pickDefaultLabelKey(keys, labelKey);
+      const nextValueKey = pickDefaultValueKey(keys, valueKey, nextLabelKey);
+
+      setFetchedItems(items);
+      setResponseKeys(keys);
+      setLabelKey(nextLabelKey);
+      setValueKey(nextValueKey);
+      setShowOptionsList(false);
+      showToast(`API data fetched successfully (${items.length} options).`, 'success');
     } catch (error) {
       setFetchError(error.response?.data?.message || error.message || 'Failed to fetch options.');
     } finally {
@@ -132,8 +219,12 @@ function FieldOptionsDialog({
   };
   const fieldTypeLabel = fieldTypeLabels[fieldType] || 'Field';
 
-  return (
-    <div className="modal-backdrop-shell" role="presentation">
+  return createPortal(
+    <div
+      className="modal-backdrop-shell field-options-modal-shell"
+      onDragStart={(event) => event.preventDefault()}
+      role="presentation"
+    >
       <div
         aria-labelledby="fieldOptionsDialogTitle"
         aria-modal="true"
@@ -192,25 +283,64 @@ function FieldOptionsDialog({
                   <div className="row g-2">
                     <div className="col-6 col-md-3">
                       <label className="form-label small mb-1">Label key</label>
-                      <input
-                        className="form-control form-control-sm font-monospace"
-                        onChange={(event) => setLabelKey(event.target.value)}
-                        placeholder="label"
-                        spellCheck={false}
-                        type="text"
-                        value={labelKey}
-                      />
+                      {responseKeys.length ? (
+                        <select
+                          className="form-select form-select-sm font-monospace"
+                          onChange={(event) => handleLabelKeyChange(event.target.value)}
+                          value={labelKey}
+                        >
+                          {responseKeys.map((key) => (
+                            <option key={`label-${key}`} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          className="form-control form-control-sm font-monospace"
+                          onChange={(event) => setLabelKey(event.target.value)}
+                          placeholder="label"
+                          spellCheck={false}
+                          type="text"
+                          value={labelKey}
+                        />
+                      )}
                     </div>
                     <div className="col-6 col-md-3">
                       <label className="form-label small mb-1">Value key</label>
-                      <input
-                        className="form-control form-control-sm font-monospace"
-                        onChange={(event) => setValueKey(event.target.value)}
-                        placeholder="value"
-                        spellCheck={false}
-                        type="text"
-                        value={valueKey}
-                      />
+                      {responseKeys.length ? (
+                        <select
+                          className="form-select form-select-sm font-monospace"
+                          onChange={(event) => handleValueKeyChange(event.target.value)}
+                          value={valueKey}
+                        >
+                          {responseKeys.map((key) => (
+                            <option key={`value-${key}`} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          className="form-control form-control-sm font-monospace"
+                          onChange={(event) => setValueKey(event.target.value)}
+                          placeholder="value"
+                          spellCheck={false}
+                          type="text"
+                          value={valueKey}
+                        />
+                      )}
+                    </div>
+                    <div className="col-12 col-md-3 d-flex align-items-end">
+                      <button
+                        className="btn btn-sm btn-outline-primary w-100"
+                        disabled={!fetchedItems.length}
+                        onClick={handleShowMappedOptions}
+                        type="button"
+                      >
+                        <i className="bi bi-list-ul me-1" />
+                        Show options
+                      </button>
                     </div>
                   </div>
                   {fetchError && (
@@ -220,6 +350,8 @@ function FieldOptionsDialog({
                   )}
                 </div>
               </div>
+              {shouldShowOptionsTable ? (
+                <>
               <div className="table-responsive">
                 <table className="table table-sm align-middle field-options-table mb-0">
                   <thead>
@@ -280,6 +412,12 @@ function FieldOptionsDialog({
                 <i className="bi bi-plus-lg me-1" />
                 Add option
               </button>
+                </>
+              ) : (
+                <p className="small text-muted mb-0">
+                  Select label and value keys, then click &quot;Show options&quot; to load the list below.
+                </p>
+              )}
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline-secondary" onClick={onClose} type="button">
@@ -293,7 +431,8 @@ function FieldOptionsDialog({
         </div>
       </div>
       <div className="modal-backdrop show" />
-    </div>
+    </div>,
+    document.body,
   );
 }
 

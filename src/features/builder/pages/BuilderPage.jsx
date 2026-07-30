@@ -5,12 +5,16 @@ import FormToolbar from '@/features/builder/components/FormToolbar';
 import JsonImportCard from '@/features/builder/components/JsonImportCard';
 import LeftSidebar from '@/features/builder/components/LeftSidebar';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
+import { useToast } from '@/shared/hooks/useToast';
 import { setBuilderReturnProjectId } from '@/shared/utils/builderNavigation';
+
+const AUTO_SAVE_INTERVAL_MS = 10_000;
 
 function BuilderPage() {
   const { formId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { showToast } = useToast();
   const createdNewRef = useRef(false);
   const {
     activeForm,
@@ -20,11 +24,16 @@ function BuilderPage() {
     beginEditSession,
     applyPreviewDraftToForms,
     getPreviewDraft,
+    autoSaveActiveForm,
   } = useFormBuilder();
   const formsRef = useRef(forms);
   const sessionFormIdRef = useRef(null);
   const previewDraftAppliedForRef = useRef(null);
+  const autoSaveRef = useRef(autoSaveActiveForm);
+  const showToastRef = useRef(showToast);
   formsRef.current = forms;
+  autoSaveRef.current = autoSaveActiveForm;
+  showToastRef.current = showToast;
 
   // Create once for /builder/new
   useEffect(() => {
@@ -94,6 +103,19 @@ function BuilderPage() {
       setBuilderReturnProjectId(projectId);
     }
   }, [activeForm?.metadata?.projectId, searchParams]);
+
+  useEffect(() => {
+    if (!activeForm?.id) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      autoSaveRef.current();
+      showToastRef.current('Form auto-saved.', 'info');
+    }, AUTO_SAVE_INTERVAL_MS);
+
+    return () => window.clearInterval(timer);
+  }, [activeForm?.id]);
 
   if (!activeForm) {
     return (

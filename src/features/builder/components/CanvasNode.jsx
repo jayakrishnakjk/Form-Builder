@@ -172,7 +172,8 @@ function CanvasNode({ node, onDropNode }) {
         if (
           event.target.closest('.canvas-node-inline-input') ||
           event.target.closest('.canvas-node-settings') ||
-          event.target.closest('.canvas-node-required-toggle')
+          event.target.closest('.canvas-node-required-toggle') ||
+          event.target.closest('.modal-backdrop-shell')
         ) {
           event.preventDefault();
           return;
