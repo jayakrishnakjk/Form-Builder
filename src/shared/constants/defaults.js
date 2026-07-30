@@ -142,6 +142,19 @@ export const createBaseField = (type) => {
     field.metadata.allowedExtensions = type === 'image' ? ['png', 'jpg', 'jpeg', 'webp'] : ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'png', 'jpg'];
   }
 
+  if (type === 'button') {
+    field.label = 'Button';
+    field.placeholder = '';
+    field.defaultValue = '';
+    field.required = false;
+    field.validation.required = false;
+    field.metadata.buttonAction = 'button';
+    field.metadata.variant = 'primary';
+    field.metadata.buttonColor = '#6610f2';
+    field.metadata.apiUrl = '';
+    field.metadata.successToastMessage = '';
+  }
+
   if (type === 'richtext') {
     field.defaultValue = '<p>Enter rich text here...</p>';
   }

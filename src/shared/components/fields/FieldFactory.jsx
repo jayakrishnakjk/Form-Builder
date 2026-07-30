@@ -42,7 +42,7 @@ function RatingControl({ field, value = 0, onChange, disabled }) {
   );
 }
 
-function FieldFactory({ field, value, error, onChange, onBlur, formData = {}, disabled = false }) {
+function FieldFactory({ field, value, error, onChange, onBlur, onClick, formData = {}, disabled = false }) {
   const [options, setOptions] = useState(() => normalizeOptions(field, [], formData));
 
   const parentKey = field.apiBinding?.parentKey;
@@ -164,6 +164,33 @@ function FieldFactory({ field, value, error, onChange, onBlur, formData = {}, di
         return <DynamicTableField disabled={disabled || field.disabled} field={field} onChange={onChange} value={value || []} />;
       case 'repeater':
         return <RepeaterField disabled={disabled || field.disabled} field={field} onChange={onChange} value={value || []} />;
+      case 'button': {
+        const action = field.metadata?.buttonAction || 'button';
+        const buttonColor = field.metadata?.buttonColor;
+        const useCustomColor = Boolean(buttonColor);
+        const variantClass =
+          field.metadata?.variant === 'secondary'
+            ? 'btn-outline-secondary'
+            : field.metadata?.variant === 'outline'
+              ? 'btn-outline-primary'
+              : 'btn-primary';
+        const htmlType = action === 'submit' ? 'submit' : action === 'reset' ? 'reset' : 'button';
+        return (
+          <button
+            className={`btn ${useCustomColor ? 'text-white' : variantClass} ${field.className || ''}`.trim()}
+            disabled={disabled || field.disabled}
+            onClick={onClick}
+            style={
+              useCustomColor
+                ? { backgroundColor: buttonColor, borderColor: buttonColor }
+                : undefined
+            }
+            type={htmlType}
+          >
+            {field.label || 'Button'}
+          </button>
+        );
+      }
       default:
         return <input {...commonProps} onChange={(event) => onChange(event.target.value)} type="text" />;
     }
@@ -175,7 +202,7 @@ function FieldFactory({ field, value, error, onChange, onBlur, formData = {}, di
 
   return (
     <div>
-      {!['checkbox', 'switch', 'heading', 'divider', 'html'].includes(field.type) && (
+      {!['checkbox', 'switch', 'heading', 'divider', 'html', 'button'].includes(field.type) && (
         <label className="form-label fw-semibold">
           {field.label} {(field.required || field.validation?.required) && <span className="text-danger">*</span>}
         </label>

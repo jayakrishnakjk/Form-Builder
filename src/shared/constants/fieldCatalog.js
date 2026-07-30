@@ -30,7 +30,8 @@ export const FIELD_CATALOG = [
       { type: 'switch', label: 'Switch', icon: 'bi-toggles' },
       { type: 'select', label: 'Select', icon: 'bi-menu-button-wide' },
       { type: 'multiselect', label: 'Multi Select', icon: 'bi-list-check' },
-      { type: 'file', label: 'File Upload', icon: 'bi-upload' }
+      { type: 'file', label: 'File Upload', icon: 'bi-upload' },
+      { type: 'button', label: 'Button', icon: 'bi-hand-index' }
     ],
   }
 ];

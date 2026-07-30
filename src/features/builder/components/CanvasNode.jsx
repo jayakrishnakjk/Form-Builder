@@ -3,6 +3,7 @@ import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
 import { getRowSlotTemplate } from '@/shared/constants/defaults';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import FieldOptionsDialog from './FieldOptionsDialog';
+import ButtonSettingsDialog from './ButtonSettingsDialog';
 
 const FIELDS_WITH_OPTIONS = new Set(['radio', 'select', 'multiselect']);
 
@@ -100,6 +101,20 @@ const renderNodePreview = (node) => {
     );
   }
 
+  if (node.type === 'button') {
+    const buttonColor = node.metadata?.buttonColor || '#6610f2';
+    return (
+      <button
+        className="btn btn-sm text-white"
+        disabled
+        style={{ backgroundColor: buttonColor, borderColor: buttonColor }}
+        type="button"
+      >
+        {node.label || 'Button'}
+      </button>
+    );
+  }
+
   return (
     <input
       className="form-control form-control-sm"
@@ -122,9 +137,12 @@ function CanvasNode({ node, onDropNode }) {
   const isRow = node.type === 'row';
   const isColumn = node.type === 'column';
   const isLayoutContainer = isRow || isColumn;
+  const showRequiredToggle = !isLayoutContainer && node.type !== 'button';
   const isSelected = selectedFieldId === node.id;
   const hasOptionsEditor = FIELDS_WITH_OPTIONS.has(node.type);
+  const hasButtonSettingsEditor = node.type === 'button';
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
+  const [buttonSettingsOpen, setButtonSettingsOpen] = useState(false);
   const rowSlotTemplate = isRow ? getRowSlotTemplate(node) : null;
   const remainingRowWidth = isRow
     ? Math.max(
@@ -241,7 +259,7 @@ function CanvasNode({ node, onDropNode }) {
           </div>
         </div>
         <div className="canvas-node-header-actions">
-          {!isLayoutContainer && (
+          {showRequiredToggle && (
             <label
               className="canvas-node-required-toggle"
               title="Required field"
@@ -276,6 +294,20 @@ function CanvasNode({ node, onDropNode }) {
               }}
               onMouseDown={(event) => event.stopPropagation()}
               title={`Edit ${node.type} options`}
+              type="button"
+            >
+              <i className="bi bi-gear" />
+            </button>
+          )}
+          {hasButtonSettingsEditor && (
+            <button
+              className="btn btn-sm canvas-node-settings"
+              onClick={(event) => {
+                event.stopPropagation();
+                setButtonSettingsOpen(true);
+              }}
+              onMouseDown={(event) => event.stopPropagation()}
+              title="Button settings"
               type="button"
             >
               <i className="bi bi-gear" />
@@ -377,6 +409,25 @@ function CanvasNode({ node, onDropNode }) {
             </div>
           )}
         </div>
+      )}
+      {buttonSettingsOpen && (
+        <ButtonSettingsDialog
+          apiUrl={node.metadata?.apiUrl || ''}
+          buttonColor={node.metadata?.buttonColor || '#6610f2'}
+          fieldLabel={node.label}
+          onClose={() => setButtonSettingsOpen(false)}
+          onSave={(settings) => {
+            updateField(node.id, {
+              metadata: {
+                ...(node.metadata || {}),
+                buttonColor: settings.buttonColor,
+                apiUrl: settings.apiUrl,
+                successToastMessage: settings.successToastMessage,
+              },
+            });
+          }}
+          successToastMessage={node.metadata?.successToastMessage || ''}
+        />
       )}
       {optionsDialogOpen && (
         <FieldOptionsDialog

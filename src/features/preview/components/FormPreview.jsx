@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import FieldFactory from '@/shared/components/fields/FieldFactory';
+import { apiClient } from '@/shared/services/apiClient';
+import { useToast } from '@/shared/hooks/useToast';
 import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
 import { applyFormulas } from '@/shared/utils/formulaEngine';
 import { executeEventScript, getRuntimeFieldState } from '@/shared/utils/logicEngine';
@@ -9,7 +11,7 @@ import { validateField, validateForm } from '@/shared/utils/validationEngine';
 const createInitialData = (children = []) => {
   const flat = flattenFields(children);
   return flat.reduce((accumulator, field) => {
-    if (field.objectKey) {
+    if (field.objectKey && field.type !== 'button') {
       accumulator[field.objectKey] = field.defaultValue ?? '';
     }
     return accumulator;
@@ -19,6 +21,7 @@ const createInitialData = (children = []) => {
 const EMPTY_LAYOUT_CHILDREN = [];
 
 function FormPreview({ form, onSubmitted }) {
+  const { showToast } = useToast();
   const layoutChildren = form?.layout?.children ?? EMPTY_LAYOUT_CHILDREN;
   const [formData, setFormData] = useState(() => createInitialData(layoutChildren));
   const [errors, setErrors] = useState({});
@@ -43,6 +46,28 @@ function FormPreview({ form, onSubmitted }) {
       [field.objectKey]: validateField(field, nextValue, nextData),
     }));
     executeEventScript(field.events?.onChange, { field, value: nextValue, formData: nextData });
+  };
+
+  const handleButtonClick = async (field) => {
+    executeEventScript(field.events?.onClick, { field, formData });
+
+    const apiUrl = field.metadata?.apiUrl?.trim();
+    if (!apiUrl) {
+      return;
+    }
+
+    try {
+      await apiClient.post(apiUrl, formData);
+      showToast(
+        field.metadata?.successToastMessage?.trim() || 'Action completed successfully.',
+        'success',
+      );
+    } catch (error) {
+      showToast(
+        error.response?.data?.message || error.message || 'API call failed.',
+        'error',
+      );
+    }
   };
 
   const renderNode = (node, parentType = 'root') => {
@@ -96,6 +121,7 @@ function FormPreview({ form, onSubmitted }) {
           formData={formData}
           onBlur={() => executeEventScript(node.events?.onBlur, { field: node, value: formData[node.objectKey], formData })}
           onChange={(nextValue) => handleFieldChange(node, nextValue)}
+          onClick={() => (node.type === 'button' ? handleButtonClick(node) : undefined)}
           value={formData[node.objectKey] ?? runtime.defaultValue ?? ''}
         />
       </div>
@@ -143,12 +169,6 @@ function FormPreview({ form, onSubmitted }) {
         </div>
         <form onSubmit={handleSubmit}>
           {layoutChildren.map((node) => renderNode(node))}
-          <div className="d-flex gap-2 pt-2">
-            <button className="btn btn-primary" type="submit">{form.settings?.submitLabel || 'Submit'}</button>
-            <button className="btn btn-outline-secondary" onClick={() => setFormData(createInitialData(layoutChildren))} type="button">
-              {form.settings?.resetLabel || 'Reset'}
-            </button>
-          </div>
         </form>
       </div>
     </div>

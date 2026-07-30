@@ -2,7 +2,12 @@ const isEmpty = (value) => value === undefined || value === null || value === ''
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}/;
 
+const NON_INPUT_FIELD_TYPES = new Set(['button', 'heading', 'divider', 'html', 'hidden']);
+
 export const validateField = (field, value, formData = {}) => {
+  if (NON_INPUT_FIELD_TYPES.has(field.type)) {
+    return [];
+  }
   const errors = [];
   const { validation = {} } = field;
 
@@ -82,12 +87,14 @@ export const validateForm = (layoutChildren = [], formData = {}) => {
     nodes.forEach((node) => {
       if (node.children?.length) {
         walk(node.children);
+        return;
       }
-      if (!node.hidden && node.visible !== false && !node.children) {
-        const nodeErrors = validateField(node, formData[node.objectKey], formData);
-        if (nodeErrors.length) {
-          errors[node.objectKey] = nodeErrors;
-        }
+      if (NON_INPUT_FIELD_TYPES.has(node.type) || node.hidden || node.visible === false) {
+        return;
+      }
+      const nodeErrors = validateField(node, formData[node.objectKey], formData);
+      if (nodeErrors.length) {
+        errors[node.objectKey] = nodeErrors;
       }
     });
   };
