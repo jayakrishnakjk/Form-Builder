@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import { useToast } from '@/shared/hooks/useToast';
 import { exportJson } from '@/shared/utils/formSerializer';
+import { ROUTES } from '@/shared/constants/routes';
 import {
   getBuilderReturnProjectId,
   setBuilderReturnProjectId,
 } from '@/shared/utils/builderNavigation';
+import { setPreviewDraftForTab } from '@/shared/utils/previewNavigation';
 
 function FormToolbar() {
   const navigate = useNavigate();
@@ -41,7 +43,20 @@ function FormToolbar() {
     }
     // Capture live canvas so Preview shows unsaved work.
     capturePreviewDraft();
-    navigate(`/preview/${activeForm.id}`);
+    navigate(ROUTES.preview(activeForm.id));
+  };
+
+  const handleOpenUrl = () => {
+    if (!activeForm?.id) {
+      return;
+    }
+    capturePreviewDraft();
+    setPreviewDraftForTab(activeForm);
+    window.open(
+      `${window.location.origin}${ROUTES.previewStandalone(activeForm.id)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
   };
 
   return (
@@ -77,6 +92,9 @@ function FormToolbar() {
             </button>
             <button className="btn btn-outline-primary " onClick={handlePreview} type="button">
               Preview Form
+            </button>
+            <button className="btn btn-outline-secondary" onClick={handleOpenUrl} type="button">
+              URL
             </button>
             <button className="btn btn-outline-dark" onClick={() => setShowJsonStudio((value) => !value)} type="button">
               JSON

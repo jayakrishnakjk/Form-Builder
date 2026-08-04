@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useFormBuilder } from '../hooks/useFormBuilder';
 import { useProjects } from '../hooks/useProjects';
 import {
@@ -18,6 +18,7 @@ const FALLBACK_PROJECT_ID = 'project_recruitment_portal';
 function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { getProjectById, projects } = useProjects();
   const { activeForm, forms } = useFormBuilder();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -27,6 +28,7 @@ function AppShell() {
     [location.pathname],
   );
   const isPreviewRoute = segments[0] === 'preview';
+  const isStandalonePreview = isPreviewRoute && searchParams.get('standalone') === '1';
   const isBuilderRoute = segments[0] === 'builder';
   const isProjectDetailsRoute = segments[0] === 'projects' && Boolean(segments[1]);
 
@@ -136,6 +138,14 @@ function AppShell() {
 
     navigate(-1);
   };
+
+  if (isStandalonePreview) {
+    return (
+      <div className="standalone-preview-shell">
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell w-100 h-100 d-flex flex-column flex-lg-row">

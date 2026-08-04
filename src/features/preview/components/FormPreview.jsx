@@ -7,6 +7,7 @@ import { applyFormulas } from '@/shared/utils/formulaEngine';
 import { executeEventScript, getRuntimeFieldState } from '@/shared/utils/logicEngine';
 import { flattenFields } from '@/shared/utils/tree';
 import { validateField, validateForm } from '@/shared/utils/validationEngine';
+import { resolveButtonAction } from '@/shared/utils/buttonActions';
 
 const createInitialData = (children = []) => {
   const flat = flattenFields(children);
@@ -121,7 +122,16 @@ function FormPreview({ form, onSubmitted }) {
           formData={formData}
           onBlur={() => executeEventScript(node.events?.onBlur, { field: node, value: formData[node.objectKey], formData })}
           onChange={(nextValue) => handleFieldChange(node, nextValue)}
-          onClick={() => (node.type === 'button' ? handleButtonClick(node) : undefined)}
+          onClick={() => {
+            if (node.type !== 'button') {
+              return undefined;
+            }
+            const action = resolveButtonAction(node);
+            if (action === 'submit' || action === 'reset') {
+              return undefined;
+            }
+            return handleButtonClick(node);
+          }}
           value={formData[node.objectKey] ?? runtime.defaultValue ?? ''}
         />
       </div>
@@ -137,6 +147,13 @@ function FormPreview({ form, onSubmitted }) {
       setShowSuccess(true);
       console.log('Submitted form payload', formData);
     }
+  };
+
+  const handleReset = (event) => {
+    event.preventDefault();
+    const defaults = applyFormulas(flatFields, createInitialData(layoutChildren));
+    setFormData(defaults);
+    setErrors({});
   };
 
   return (
@@ -167,7 +184,7 @@ function FormPreview({ form, onSubmitted }) {
           <h3 className="mb-1">{form.name}</h3>
           <p className="text-muted mb-0">{form.description}</p>
         </div>
-        <form onSubmit={handleSubmit}>
+        <form onReset={handleReset} onSubmit={handleSubmit}>
           {layoutChildren.map((node) => renderNode(node))}
         </form>
       </div>

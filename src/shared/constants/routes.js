@@ -8,5 +8,6 @@ export const ROUTES = {
   builderNew: (projectId) =>
     projectId ? `/builder/new?projectId=${projectId}` : '/builder/new',
   preview: (formId) => `/preview/${formId}`,
+  previewStandalone: (formId) => `/preview/${formId}?standalone=1`,
   settings: '/settings',
 };

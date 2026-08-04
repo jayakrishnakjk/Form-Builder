@@ -5,6 +5,7 @@ import FileUploadField from './FileUploadField';
 import RepeaterField from './RepeaterField';
 import RichTextField from './RichTextField';
 import SignaturePadField from './SignaturePadField';
+import { resolveButtonAction } from '@/shared/utils/buttonActions';
 
 const normalizeOptions = (field, responseData, formData) => {
   if (field.apiBinding?.sourceType === 'api' && Array.isArray(responseData)) {
@@ -165,7 +166,7 @@ function FieldFactory({ field, value, error, onChange, onBlur, onClick, formData
       case 'repeater':
         return <RepeaterField disabled={disabled || field.disabled} field={field} onChange={onChange} value={value || []} />;
       case 'button': {
-        const action = field.metadata?.buttonAction || 'button';
+        const action = resolveButtonAction(field);
         const buttonColor = field.metadata?.buttonColor;
         const useCustomColor = Boolean(buttonColor);
         const variantClass =
