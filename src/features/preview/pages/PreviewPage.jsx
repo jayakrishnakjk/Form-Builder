@@ -1,14 +1,11 @@
 import { useEffect, useMemo } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import FormPreview from '@/features/preview/components/FormPreview';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
-import { getPreviewDraftForTab } from '@/shared/utils/previewNavigation';
 
 function PreviewPage() {
   const { formId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const isStandalone = searchParams.get('standalone') === '1';
   const { forms, activeForm, loadForm, getPreviewDraft, returnToBuilderFromPreview } =
     useFormBuilder();
 
@@ -20,16 +17,12 @@ function PreviewPage() {
   }, [formId]);
 
   const previewDraft = getPreviewDraft();
-  const tabPreviewDraft = getPreviewDraftForTab(formId);
   const form = useMemo(() => {
     if (previewDraft?.id === formId) {
       return previewDraft;
     }
-    if (tabPreviewDraft?.id === formId) {
-      return tabPreviewDraft;
-    }
     return forms.find((item) => item.id === formId) || activeForm;
-  }, [previewDraft, tabPreviewDraft, formId, forms, activeForm]);
+  }, [previewDraft, formId, forms, activeForm]);
 
   const goToBuilder = () => {
     const targetId = formId || form?.id;
@@ -53,21 +46,6 @@ function PreviewPage() {
     );
   }
 
-  const formPreview = (
-    <FormPreview
-      form={form}
-      onSubmitted={() => {
-        if (!isStandalone && form.metadata?.projectId) {
-          navigate(`/projects/${form.metadata.projectId}`);
-        }
-      }}
-    />
-  );
-
-  if (isStandalone) {
-    return <div className="standalone-preview-page">{formPreview}</div>;
-  }
-
   return (
     <div className="container-fluid py-3">
       <div className="d-flex flex-column gap-3">
@@ -81,7 +59,14 @@ function PreviewPage() {
             </button>
           </div>
         </div>
-        {formPreview}
+        <FormPreview
+          form={form}
+          onSubmitted={() => {
+            if (form.metadata?.projectId) {
+              navigate(`/projects/${form.metadata.projectId}`);
+            }
+          }}
+        />
       </div>
     </div>
   );

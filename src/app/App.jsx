@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import BuilderPage from '@/features/builder/pages/BuilderPage';
 import DashboardPage from '@/features/forms/pages/DashboardPage';
 import PreviewPage from '@/features/preview/pages/PreviewPage';
+import EmbedPage from '@/features/preview/pages/EmbedPage';
 import ProjectDashboardPage from '@/features/projects/pages/ProjectDashboardPage';
 import ProjectDetailsPage from '@/features/projects/pages/ProjectDetailsPage';
 import SettingsPage from '@/features/settings/pages/SettingsPage';
@@ -11,6 +12,7 @@ import AppShell from '@/shared/layouts/AppShell';
 function App() {
   return (
     <Routes>
+      <Route path="/embed/:formId" element={<EmbedPage />} />
       <Route element={<AppShell />}>
         <Route path={ROUTES.home} element={<Navigate to={ROUTES.dashboard} replace />} />
         <Route path={ROUTES.dashboard} element={<ProjectDashboardPage />} />

@@ -34,17 +34,6 @@ a:hover {
     #f6f7f9;
 }
 
-.standalone-preview-shell {
-  min-height: 100vh;
-  background: #f6f7f9;
-}
-
-.standalone-preview-page {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 1.5rem;
-}
-
 .app-sidebar {
   position: sticky;
   top: 0;
@@ -1132,6 +1121,33 @@ a:hover {
 .settings-placeholder i {
   color: #94a3b8;
   font-size: 2.4rem;
+}
+
+.embed-page-shell {
+  min-height: 100vh;
+  padding: 1rem;
+  background: #f6f7f9;
+}
+
+.embed-script-block {
+  background: #111827;
+  color: #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.embed-copy-btn {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #334155;
+}
+
+.embed-copy-btn:hover {
+  background: #f8fafc;
 }
 
 .save-toast {

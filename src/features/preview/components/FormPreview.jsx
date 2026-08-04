@@ -6,6 +6,7 @@ import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
 import { applyFormulas } from '@/shared/utils/formulaEngine';
 import { executeEventScript, getRuntimeFieldState } from '@/shared/utils/logicEngine';
 import { flattenFields } from '@/shared/utils/tree';
+import { buildFormPayload, createFormDataFromLayout } from '@/shared/utils/formPayload';
 import { validateField, validateForm } from '@/shared/utils/validationEngine';
 import { resolveButtonAction } from '@/shared/utils/buttonActions';
 import {
@@ -13,15 +14,7 @@ import {
   shouldInlineButtons,
 } from '@/shared/utils/inlineButtonsLayout';
 
-const createInitialData = (children = []) => {
-  const flat = flattenFields(children);
-  return flat.reduce((accumulator, field) => {
-    if (field.objectKey && field.type !== 'button') {
-      accumulator[field.objectKey] = field.defaultValue ?? '';
-    }
-    return accumulator;
-  }, {});
-};
+const createInitialData = (children = []) => createFormDataFromLayout(children);
 
 const EMPTY_LAYOUT_CHILDREN = [];
 
@@ -53,26 +46,33 @@ function FormPreview({ form, onSubmitted }) {
     executeEventScript(field.events?.onChange, { field, value: nextValue, formData: nextData });
   };
 
-  const handleButtonClick = async (field) => {
-    executeEventScript(field.events?.onClick, { field, formData });
-
-    const apiUrl = field.metadata?.apiUrl?.trim();
-    if (!apiUrl) {
-      return;
+  const callButtonApi = async (field) => {
+    const rawUrl = field.metadata?.apiUrl?.trim();
+    if (!rawUrl) {
+      return { called: false, ok: true };
     }
 
+    const apiUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+
     try {
-      await apiClient.post(apiUrl, formData);
+      await apiClient.post(apiUrl, buildFormPayload(formData, layoutChildren));
       showToast(
         field.metadata?.successToastMessage?.trim() || 'Action completed successfully.',
         'success',
       );
+      return { called: true, ok: true };
     } catch (error) {
       showToast(
         error.response?.data?.message || error.message || 'API call failed.',
         'error',
       );
+      return { called: true, ok: false };
     }
+  };
+
+  const handleButtonClick = async (field) => {
+    executeEventScript(field.events?.onClick, { field, formData });
+    await callButtonApi(field);
   };
 
   const renderNode = (node, parentType = 'root', inheritedButtonsInline = false, inlineButton = false) => {
@@ -163,15 +163,34 @@ function FormPreview({ form, onSubmitted }) {
     );
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const nextErrors = validateForm(layoutChildren, formData);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length === 0) {
-      executeEventScript(form.events?.onSubmit, { formData });
-      setShowSuccess(true);
-      console.log('Submitted form payload', formData);
+    if (Object.keys(nextErrors).length > 0) {
+      return;
     }
+
+    executeEventScript(form.events?.onSubmit, { formData });
+
+    const submitButton = flatFields.find(
+      (field) =>
+        field.type === 'button' &&
+        resolveButtonAction(field) === 'submit' &&
+        field.metadata?.apiUrl?.trim(),
+    );
+
+    if (submitButton) {
+      executeEventScript(submitButton.events?.onClick, { field: submitButton, formData });
+      const result = await callButtonApi(submitButton);
+      if (result.ok) {
+        console.log('Submitted form payload', formData);
+      }
+      return;
+    }
+
+    setShowSuccess(true);
+    console.log('Submitted form payload', formData);
   };
 
   const handleReset = (event) => {
