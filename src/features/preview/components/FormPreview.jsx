@@ -8,6 +8,10 @@ import { executeEventScript, getRuntimeFieldState } from '@/shared/utils/logicEn
 import { flattenFields } from '@/shared/utils/tree';
 import { validateField, validateForm } from '@/shared/utils/validationEngine';
 import { resolveButtonAction } from '@/shared/utils/buttonActions';
+import {
+  groupChildrenForButtonLayout,
+  shouldInlineButtons,
+} from '@/shared/utils/inlineButtonsLayout';
 
 const createInitialData = (children = []) => {
   const flat = flattenFields(children);
@@ -71,19 +75,33 @@ function FormPreview({ form, onSubmitted }) {
     }
   };
 
-  const renderNode = (node, parentType = 'root') => {
+  const renderNode = (node, parentType = 'root', inheritedButtonsInline = false, inlineButton = false) => {
     const runtime = getRuntimeFieldState(node, formData);
     if (runtime.hidden) {
       return null;
     }
 
     if (CONTAINER_TYPES.includes(node.type)) {
-      const children = node.children?.map((child) => renderNode(child, node.type));
       if (node.type === 'row') {
+        const inheritInline = Boolean(node.metadata?.buttonsInline);
+        const children = node.children?.map((child) => renderNode(child, node.type, inheritInline));
         return <div className="row g-3 mb-3" key={node.id}>{children}</div>;
       }
       if (node.type === 'column') {
+        const buttonsInline = shouldInlineButtons(node, inheritedButtonsInline);
         const hasChildren = Boolean(node.children?.length);
+        const children = hasChildren
+          ? groupChildrenForButtonLayout(node.children, buttonsInline).map((group) => {
+              if (group.kind === 'buttons') {
+                return (
+                  <div className="d-flex flex-wrap gap-2 mb-3" key={group.children.map((child) => child.id).join('-')}>
+                    {group.children.map((child) => renderNode(child, node.type, false, true))}
+                  </div>
+                );
+              }
+              return renderNode(group.child, node.type, inheritedButtonsInline);
+            })
+          : null;
         return (
           <div className={`col-12 col-md-${node.width || 6}`} key={node.id}>
             {hasChildren ? (
@@ -96,6 +114,8 @@ function FormPreview({ form, onSubmitted }) {
           </div>
         );
       }
+
+      const children = node.children?.map((child) => renderNode(child, node.type, inheritedButtonsInline));
       if (node.type === 'card') {
         return <div className="card border-0 shadow-sm mb-3" key={node.id}><div className="card-body">{node.label && <h5 className="card-title">{node.label}</h5>}{children}</div></div>;
       }
@@ -111,7 +131,12 @@ function FormPreview({ form, onSubmitted }) {
       return <div className="border rounded-4 p-3 mb-3 bg-light-subtle" key={node.id}>{node.label && <h6 className="mb-3">{node.label}</h6>}{children}</div>;
     }
 
-    const fieldWrapperClass = parentType === 'row' ? `col-12 col-md-${node.width || 6}` : 'mb-3';
+    const fieldWrapperClass =
+      parentType === 'row'
+        ? `col-12 col-md-${node.width || 6}`
+        : inlineButton
+          ? ''
+          : 'mb-3';
 
     return (
       <div className={fieldWrapperClass} key={node.id}>

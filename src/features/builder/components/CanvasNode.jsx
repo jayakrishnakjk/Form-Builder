@@ -2,6 +2,11 @@ import { useState } from 'react';
 import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
 import { getRowSlotTemplate } from '@/shared/constants/defaults';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
+import {
+  groupChildrenForButtonLayout,
+  shouldInlineButtons,
+  showInlineButtonsToggle,
+} from '@/shared/utils/inlineButtonsLayout';
 import FieldOptionsDialog from './FieldOptionsDialog';
 import ButtonSettingsDialog from './ButtonSettingsDialog';
 
@@ -125,7 +130,7 @@ const renderNodePreview = (node) => {
   );
 };
 
-function CanvasNode({ node, onDropNode }) {
+function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
   const {
     selectedFieldId,
     setSelectedFieldId,
@@ -137,6 +142,8 @@ function CanvasNode({ node, onDropNode }) {
   const isRow = node.type === 'row';
   const isColumn = node.type === 'column';
   const isLayoutContainer = isRow || isColumn;
+  const buttonsInline = shouldInlineButtons(node, inheritedButtonsInline);
+  const rowButtonsInline = isRow && Boolean(node.metadata?.buttonsInline);
   const showRequiredToggle = !isLayoutContainer && node.type !== 'button';
   const isSelected = selectedFieldId === node.id;
   const hasOptionsEditor = FIELDS_WITH_OPTIONS.has(node.type);
@@ -150,6 +157,27 @@ function CanvasNode({ node, onDropNode }) {
         12 - (node.children || []).reduce((sum, child) => sum + (Number(child.width) || 6), 0),
       )
     : 0;
+
+  const renderNestedChild = (child) => (
+    <CanvasNode
+      inheritedButtonsInline={rowButtonsInline || inheritedButtonsInline}
+      key={child.id}
+      node={child}
+      onDropNode={onDropNode}
+    />
+  );
+
+  const renderColumnChildren = () =>
+    groupChildrenForButtonLayout(node.children, buttonsInline).map((group) => {
+      if (group.kind === 'buttons') {
+        return (
+          <div className="canvas-inline-buttons-group" key={group.children.map((child) => child.id).join('-')}>
+            {group.children.map((child) => renderNestedChild(child))}
+          </div>
+        );
+      }
+      return renderNestedChild(group.child);
+    });
 
   const renderRowColumnSlot = (slotWidth, slotIndex) => (
     <div className={`col-12 col-md-${slotWidth}`} key={`${node.id}-add-slot-${slotIndex}`}>
@@ -191,6 +219,7 @@ function CanvasNode({ node, onDropNode }) {
           event.target.closest('.canvas-node-inline-input') ||
           event.target.closest('.canvas-node-settings') ||
           event.target.closest('.canvas-node-required-toggle') ||
+          event.target.closest('.canvas-node-inline-buttons-toggle') ||
           event.target.closest('.modal-backdrop-shell')
         ) {
           event.preventDefault();
@@ -313,6 +342,30 @@ function CanvasNode({ node, onDropNode }) {
               <i className="bi bi-gear" />
             </button>
           )}
+          {isLayoutContainer && showInlineButtonsToggle(node) && (
+            <label
+              className="canvas-node-inline-buttons-toggle"
+              title="Buttons side by side"
+              onClick={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <input
+                checked={Boolean(node.metadata?.buttonsInline)}
+                className="form-check-input"
+                onChange={(event) => {
+                  event.stopPropagation();
+                  updateField(node.id, {
+                    metadata: {
+                      ...(node.metadata || {}),
+                      buttonsInline: event.target.checked,
+                    },
+                  });
+                }}
+                type="checkbox"
+              />
+              <span className="canvas-node-inline-buttons-label">Btn</span>
+            </label>
+          )}
           <button
             className="btn btn-sm canvas-node-delete"
             onClick={(event) => {
@@ -365,7 +418,11 @@ function CanvasNode({ node, onDropNode }) {
                           className={`col-12 col-md-${child.width || slotWidth}`}
                           key={child.id}
                         >
-                          <CanvasNode node={child} onDropNode={onDropNode} />
+                          <CanvasNode
+                            inheritedButtonsInline={rowButtonsInline}
+                            node={child}
+                            onDropNode={onDropNode}
+                          />
                         </div>
                       );
                     }
@@ -378,7 +435,11 @@ function CanvasNode({ node, onDropNode }) {
                         className={`col-12 col-md-${child.width || Math.floor(12 / node.children.length) || 6}`}
                         key={child.id}
                       >
-                        <CanvasNode node={child} onDropNode={onDropNode} />
+                        <CanvasNode
+                          inheritedButtonsInline={rowButtonsInline}
+                          node={child}
+                          onDropNode={onDropNode}
+                        />
                       </div>
                     ))}
                     {remainingRowWidth > 0 && renderRowColumnSlot(remainingRowWidth, node.children.length)}
@@ -386,11 +447,7 @@ function CanvasNode({ node, onDropNode }) {
                 )}
               </div>
             ) : (
-              <div className="d-flex flex-column gap-2">
-                {node.children.map((child) => (
-                  <CanvasNode key={child.id} node={child} onDropNode={onDropNode} />
-                ))}
-              </div>
+              <div className="d-flex flex-column gap-2">{renderColumnChildren()}</div>
             )
           ) : (
             <div className={`empty-nested-state ${isRow ? 'empty-nested-state--row' : ''} ${isColumn ? 'empty-nested-state--column' : ''}`}>

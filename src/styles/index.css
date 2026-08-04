@@ -547,6 +547,44 @@ a:hover {
   line-height: 1;
 }
 
+.canvas-node-inline-buttons-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.15rem 0.35rem;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.canvas-node-inline-buttons-toggle:hover {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.canvas-node-inline-buttons-toggle .form-check-input {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.canvas-node-inline-buttons-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #64748b;
+  line-height: 1;
+}
+
+.canvas-inline-buttons-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
 .canvas-node--row > .canvas-node-header {
   background: linear-gradient(180deg, #eef5ff, #e8f0fb);
   border-bottom-color: #d7e3f4;

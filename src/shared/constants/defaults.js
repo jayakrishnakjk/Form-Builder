@@ -164,6 +164,7 @@ export const createBaseField = (type) => {
     field.metadata = {
       ...field.metadata,
       columns: type === 'row' ? [6, 6] : [],
+      buttonsInline: false,
     };
     field.children = [];
   }
