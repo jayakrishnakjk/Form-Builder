@@ -1,4 +1,7 @@
 (function () {
+  var STORAGE_KEY = 'formbuilder:form-submissions';
+  var MESSAGE_TYPE = 'formbuilder:submit';
+
   var script =
     document.currentScript ||
     document.querySelector('script[data-form-id][src*="form-embed.js"]');
@@ -22,6 +25,29 @@
     script.parentNode.insertBefore(container, script.nextSibling);
   }
 
+  function saveSubmission(targetFormId, payload, submittedAt) {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      var store = raw ? JSON.parse(raw) : {};
+      var entries = Array.isArray(store[targetFormId]) ? store[targetFormId] : [];
+
+      entries.push({
+        submittedAt: submittedAt || new Date().toISOString(),
+        data: payload,
+      });
+
+      store[targetFormId] = entries;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    } catch (error) {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          [targetFormId]: [{ submittedAt: submittedAt || new Date().toISOString(), data: payload }],
+        }),
+      );
+    }
+  }
+
   var iframe = document.createElement('iframe');
   iframe.src = baseUrl + '/embed/' + encodeURIComponent(formId);
   iframe.title = script.getAttribute('data-form-title') || 'Embedded Form';
@@ -30,6 +56,25 @@
   iframe.style.border = '0';
   iframe.setAttribute('loading', 'lazy');
   iframe.setAttribute('allow', 'clipboard-write');
+
+  window.addEventListener('message', function (event) {
+    var data = event.data;
+    if (!data || data.type !== MESSAGE_TYPE) {
+      return;
+    }
+
+    if (event.source !== iframe.contentWindow) {
+      return;
+    }
+
+    if (data.formId) {
+      saveSubmission(data.formId, data.payload || {}, data.submittedAt);
+    }
+
+    if (data.redirectUrl) {
+      window.open(data.redirectUrl, '_blank', 'noopener,noreferrer');
+    }
+  });
 
   container.innerHTML = '';
   container.appendChild(iframe);

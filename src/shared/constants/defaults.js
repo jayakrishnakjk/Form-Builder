@@ -151,6 +151,7 @@ export const createBaseField = (type) => {
     field.metadata.buttonAction = 'button';
     field.metadata.variant = 'primary';
     field.metadata.buttonColor = '#6610f2';
+    field.metadata.callApiOnClick = true;
     field.metadata.apiUrl = '';
     field.metadata.successToastMessage = '';
   }

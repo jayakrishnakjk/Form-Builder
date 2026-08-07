@@ -6,25 +6,29 @@ const DEFAULT_BUTTON_COLOR = '#6610f2';
 function ButtonSettingsDialog({
   apiUrl = '',
   buttonColor = DEFAULT_BUTTON_COLOR,
+  callApiOnClick = true,
   fieldLabel,
   onClose,
   onSave,
   successToastMessage = '',
 }) {
   const [color, setColor] = useState(buttonColor || DEFAULT_BUTTON_COLOR);
+  const [useApi, setUseApi] = useState(callApiOnClick !== false);
   const [url, setUrl] = useState(apiUrl);
   const [toastMessage, setToastMessage] = useState(successToastMessage);
 
   useEffect(() => {
     setColor(buttonColor || DEFAULT_BUTTON_COLOR);
+    setUseApi(callApiOnClick !== false);
     setUrl(apiUrl);
     setToastMessage(successToastMessage);
-  }, [apiUrl, buttonColor, successToastMessage]);
+  }, [apiUrl, buttonColor, callApiOnClick, successToastMessage]);
 
   const handleSave = (event) => {
     event.preventDefault();
     onSave({
       buttonColor: color || DEFAULT_BUTTON_COLOR,
+      callApiOnClick: useApi,
       apiUrl: url.trim(),
       successToastMessage: toastMessage.trim(),
     });
@@ -78,28 +82,46 @@ function ButtonSettingsDialog({
                   </button>
                 </div>
               </div>
-              <div>
-                <label className="form-label small fw-semibold">API URL (on click)</label>
+              <div className="form-check">
                 <input
-                  className="form-control"
-                  onChange={(event) => setUrl(event.target.value)}
-                  placeholder="https://api.example.com/action"
-                  spellCheck={false}
-                  type="url"
-                  value={url}
+                  checked={useApi}
+                  className="form-check-input"
+                  id="buttonCallApiOnClick"
+                  onChange={(event) => setUseApi(event.target.checked)}
+                  type="checkbox"
                 />
-                <div className="form-text">Called when the button is clicked in Preview.</div>
+                <label className="form-check-label small fw-semibold" htmlFor="buttonCallApiOnClick">
+                  Call API on click
+                </label>
               </div>
-              <div>
-                <label className="form-label small fw-semibold">Success toast message</label>
-                <input
-                  className="form-control"
-                  onChange={(event) => setToastMessage(event.target.value)}
-                  placeholder="Action completed successfully."
-                  type="text"
-                  value={toastMessage}
-                />
-              </div>
+              {useApi ? (
+                <div>
+                  <label className="form-label small fw-semibold">API URL (on click)</label>
+                  <input
+                    className="form-control"
+                    onChange={(event) => setUrl(event.target.value)}
+                    placeholder="https://api.example.com/action"
+                    spellCheck={false}
+                    type="url"
+                    value={url}
+                  />
+                  <div className="form-text">
+                    Saves form data to local storage and opens this URL in a new tab on Submit.
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="form-label small fw-semibold">Success toast message</label>
+                  <input
+                    className="form-control"
+                    onChange={(event) => setToastMessage(event.target.value)}
+                    placeholder="Action completed successfully."
+                    type="text"
+                    value={toastMessage}
+                  />
+                  <div className="form-text">Shown when the button is clicked in Preview.</div>
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <button className="btn btn-outline-secondary" onClick={onClose} type="button">

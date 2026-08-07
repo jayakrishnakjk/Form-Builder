@@ -471,6 +471,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
         <ButtonSettingsDialog
           apiUrl={node.metadata?.apiUrl || ''}
           buttonColor={node.metadata?.buttonColor || '#6610f2'}
+          callApiOnClick={node.metadata?.callApiOnClick}
           fieldLabel={node.label}
           onClose={() => setButtonSettingsOpen(false)}
           onSave={(settings) => {
@@ -478,6 +479,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
               metadata: {
                 ...(node.metadata || {}),
                 buttonColor: settings.buttonColor,
+                callApiOnClick: settings.callApiOnClick,
                 apiUrl: settings.apiUrl,
                 successToastMessage: settings.successToastMessage,
               },

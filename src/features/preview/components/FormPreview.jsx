@@ -7,6 +7,8 @@ import { applyFormulas } from '@/shared/utils/formulaEngine';
 import { executeEventScript, getRuntimeFieldState } from '@/shared/utils/logicEngine';
 import { flattenFields } from '@/shared/utils/tree';
 import { buildFormPayload, createFormDataFromLayout } from '@/shared/utils/formPayload';
+import { normalizeActionUrl, saveFormSubmission } from '@/shared/utils/formSubmissionStorage';
+import { isEmbeddedPreview, postEmbedSubmit } from '@/shared/utils/embedMessaging';
 import { validateField, validateForm } from '@/shared/utils/validationEngine';
 import { resolveButtonAction } from '@/shared/utils/buttonActions';
 import {
@@ -46,13 +48,22 @@ function FormPreview({ form, onSubmitted }) {
     executeEventScript(field.events?.onChange, { field, value: nextValue, formData: nextData });
   };
 
+  const showButtonSuccessToast = (field) => {
+    showToast(
+      field.metadata?.successToastMessage?.trim() || 'Action completed successfully.',
+      'success',
+    );
+  };
+
+  const shouldCallButtonApi = (field) => field.metadata?.callApiOnClick !== false;
+
   const callButtonApi = async (field) => {
     const rawUrl = field.metadata?.apiUrl?.trim();
     if (!rawUrl) {
       return { called: false, ok: true };
     }
 
-    const apiUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+    const apiUrl = normalizeActionUrl(rawUrl);
 
     try {
       await apiClient.post(apiUrl, buildFormPayload(formData, layoutChildren));
@@ -72,7 +83,11 @@ function FormPreview({ form, onSubmitted }) {
 
   const handleButtonClick = async (field) => {
     executeEventScript(field.events?.onClick, { field, formData });
-    await callButtonApi(field);
+    if (shouldCallButtonApi(field)) {
+      await callButtonApi(field);
+      return;
+    }
+    showButtonSuccessToast(field);
   };
 
   const renderNode = (node, parentType = 'root', inheritedButtonsInline = false, inlineButton = false) => {
@@ -174,19 +189,32 @@ function FormPreview({ form, onSubmitted }) {
     executeEventScript(form.events?.onSubmit, { formData });
 
     const submitButton = flatFields.find(
-      (field) =>
-        field.type === 'button' &&
-        resolveButtonAction(field) === 'submit' &&
-        field.metadata?.apiUrl?.trim(),
+      (field) => field.type === 'button' && resolveButtonAction(field) === 'submit',
     );
 
     if (submitButton) {
       executeEventScript(submitButton.events?.onClick, { field: submitButton, formData });
-      const result = await callButtonApi(submitButton);
-      if (result.ok) {
-        console.log('Submitted form payload', formData);
+      if (shouldCallButtonApi(submitButton) && submitButton.metadata?.apiUrl?.trim()) {
+        const payload = buildFormPayload(formData, layoutChildren);
+        const redirectUrl = normalizeActionUrl(submitButton.metadata.apiUrl);
+
+        if (isEmbeddedPreview()) {
+          postEmbedSubmit({
+            formId: form.id,
+            payload,
+            redirectUrl,
+          });
+          return;
+        }
+
+        saveFormSubmission(form.id, payload);
+        window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+        return;
       }
-      return;
+      if (!shouldCallButtonApi(submitButton)) {
+        showButtonSuccessToast(submitButton);
+        return;
+      }
     }
 
     setShowSuccess(true);
