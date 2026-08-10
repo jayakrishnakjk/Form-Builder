@@ -119,7 +119,9 @@ function ButtonSettingsDialog({
                     type="text"
                     value={toastMessage}
                   />
-                  <div className="form-text">Shown when the button is clicked in Preview.</div>
+                  <div className="form-text">
+                    Saves form data to local storage and shows this message on Submit.
+                  </div>
                 </div>
               )}
             </div>

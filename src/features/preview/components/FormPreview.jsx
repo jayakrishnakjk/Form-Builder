@@ -57,6 +57,18 @@ function FormPreview({ form, onSubmitted }) {
 
   const shouldCallButtonApi = (field) => field.metadata?.callApiOnClick !== false;
 
+  const persistSubmitPayload = (payload, redirectUrl = '') => {
+    if (isEmbeddedPreview()) {
+      postEmbedSubmit({
+        formId: form.id,
+        payload,
+        redirectUrl,
+      });
+      return;
+    }
+    saveFormSubmission(form.id, payload);
+  };
+
   const callButtonApi = async (field) => {
     const rawUrl = field.metadata?.apiUrl?.trim();
     if (!rawUrl) {
@@ -198,20 +210,16 @@ function FormPreview({ form, onSubmitted }) {
         const payload = buildFormPayload(formData, layoutChildren);
         const redirectUrl = normalizeActionUrl(submitButton.metadata.apiUrl);
 
-        if (isEmbeddedPreview()) {
-          postEmbedSubmit({
-            formId: form.id,
-            payload,
-            redirectUrl,
-          });
-          return;
-        }
+        persistSubmitPayload(payload, redirectUrl);
 
-        saveFormSubmission(form.id, payload);
-        window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+        if (!isEmbeddedPreview()) {
+          window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+        }
         return;
       }
       if (!shouldCallButtonApi(submitButton)) {
+        const payload = buildFormPayload(formData, layoutChildren);
+        persistSubmitPayload(payload);
         showButtonSuccessToast(submitButton);
         return;
       }

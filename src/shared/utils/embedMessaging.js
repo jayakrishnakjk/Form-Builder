@@ -8,7 +8,7 @@ export const isEmbeddedPreview = () => {
   }
 };
 
-export const postEmbedSubmit = ({ formId, payload, redirectUrl }) => {
+export const postEmbedSubmit = ({ formId, payload, redirectUrl = '' }) => {
   window.parent.postMessage(
     {
       type: FORM_EMBED_MESSAGE_TYPE,
