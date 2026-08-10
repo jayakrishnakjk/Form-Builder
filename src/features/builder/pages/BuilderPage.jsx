@@ -8,7 +8,9 @@ import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import { useToast } from '@/shared/hooks/useToast';
 import { setBuilderReturnProjectId } from '@/shared/utils/builderNavigation';
 
-const AUTO_SAVE_INTERVAL_MS = 10_000;
+const AUTO_SAVE_INTERVAL_MS = 15_000;
+const AUTO_SAVE_IDLE_STOP_MS = 15_000;
+const AUTO_SAVE_ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'input', 'change', 'dragstart', 'drop'];
 
 function BuilderPage() {
   const { formId } = useParams();
@@ -16,6 +18,7 @@ function BuilderPage() {
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const createdNewRef = useRef(false);
+  const builderRootRef = useRef(null);
   const {
     activeForm,
     forms,
@@ -104,17 +107,58 @@ function BuilderPage() {
     }
   }, [activeForm?.metadata?.projectId, searchParams]);
 
+  // Auto-save only while the user is actively editing; stops after idle.
   useEffect(() => {
     if (!activeForm?.id) {
       return undefined;
     }
 
-    const timer = window.setInterval(() => {
-      autoSaveRef.current();
-      showToastRef.current('Form auto-saved.', 'info');
-    }, AUTO_SAVE_INTERVAL_MS);
+    const root = builderRootRef.current;
+    if (!root) {
+      return undefined;
+    }
 
-    return () => window.clearInterval(timer);
+    let intervalId = null;
+    let idleTimeoutId = null;
+
+    const stopAutoSave = () => {
+      if (intervalId != null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const startAutoSave = () => {
+      if (intervalId != null) {
+        return;
+      }
+      intervalId = window.setInterval(() => {
+        autoSaveRef.current();
+        showToastRef.current('Form auto-saved.', 'info');
+      }, AUTO_SAVE_INTERVAL_MS);
+    };
+
+    const handleActivity = () => {
+      startAutoSave();
+      if (idleTimeoutId != null) {
+        window.clearTimeout(idleTimeoutId);
+      }
+      idleTimeoutId = window.setTimeout(stopAutoSave, AUTO_SAVE_IDLE_STOP_MS);
+    };
+
+    AUTO_SAVE_ACTIVITY_EVENTS.forEach((eventName) => {
+      root.addEventListener(eventName, handleActivity, true);
+    });
+
+    return () => {
+      stopAutoSave();
+      if (idleTimeoutId != null) {
+        window.clearTimeout(idleTimeoutId);
+      }
+      AUTO_SAVE_ACTIVITY_EVENTS.forEach((eventName) => {
+        root.removeEventListener(eventName, handleActivity, true);
+      });
+    };
   }, [activeForm?.id]);
 
   if (!activeForm) {
@@ -126,7 +170,7 @@ function BuilderPage() {
   }
 
   return (
-    <div className="d-flex flex-column gap-3">
+    <div className="d-flex flex-column gap-3" ref={builderRootRef}>
       <FormToolbar />
       <div className="row g-3 builder-shell">
         <div className="col-12 col-xl-3">
