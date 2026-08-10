@@ -1,5 +1,9 @@
+import { useId, useRef } from 'react';
+
 function FileUploadField({ field, onChange, disabled, value = [] }) {
   const { multiple = true, maxFileSizeMb = 5, allowedExtensions = [] } = field.metadata || {};
+  const inputRef = useRef(null);
+  const inputId = useId();
 
   const handleFiles = (event) => {
     const files = Array.from(event.target.files || []);
@@ -22,23 +26,63 @@ function FileUploadField({ field, onChange, disabled, value = [] }) {
     onChange(accepted);
   };
 
+  const openPicker = () => {
+    if (!disabled) {
+      inputRef.current?.click();
+    }
+  };
+
+  const summary = value.length
+    ? `${value.length} file${value.length === 1 ? '' : 's'} selected`
+    : 'No file chosen';
+
   return (
-    <div className="border rounded-3 p-3 bg-light-subtle">
-      <input className="form-control" disabled={disabled} multiple={multiple} onChange={handleFiles} type="file" />
-      <div className="small text-muted mt-2">
+    <div className={`form-file-upload ${disabled ? 'is-disabled' : ''}`}>
+      <input
+        accept={
+          allowedExtensions.length
+            ? allowedExtensions.map((ext) => `.${ext}`).join(',')
+            : undefined
+        }
+        className="form-file-upload-input"
+        disabled={disabled}
+        id={inputId}
+        multiple={multiple}
+        onChange={handleFiles}
+        ref={inputRef}
+        type="file"
+      />
+      <button
+        className="form-file-upload-trigger"
+        disabled={disabled}
+        onClick={openPicker}
+        type="button"
+      >
+        <span className="form-file-upload-icon">
+          <i className="bi bi-cloud-arrow-up" />
+        </span>
+        <span className="form-file-upload-copy">
+          <span className="form-file-upload-title">
+            {multiple ? 'Choose files' : 'Choose file'}
+          </span>
+          <span className="form-file-upload-summary">{summary}</span>
+        </span>
+        <span className="form-file-upload-browse">Browse</span>
+      </button>
+      <div className="form-file-upload-hint">
         Max {maxFileSizeMb}MB • Allowed: {allowedExtensions.join(', ') || 'all'}
       </div>
       {!!value.length && (
-        <div className="row g-2 mt-2">
+        <div className="form-file-upload-list">
           {value.map((file) => (
-            <div className="col-12" key={`${file.name}-${file.size}`}>
-              <div className="border rounded p-2 bg-white d-flex justify-content-between align-items-center">
-                <div>
-                  <div className="fw-semibold small">{file.name}</div>
-                  <div className="text-muted small">{Math.round(file.size / 1024)} KB</div>
-                </div>
-                {file.previewUrl && <img alt={file.name} className="upload-preview-thumb rounded" src={file.previewUrl} />}
+            <div className="form-file-upload-item" key={`${file.name}-${file.size}`}>
+              <div className="form-file-upload-item-meta">
+                <div className="form-file-upload-item-name">{file.name}</div>
+                <div className="form-file-upload-item-size">{Math.round(file.size / 1024)} KB</div>
               </div>
+              {file.previewUrl && (
+                <img alt={file.name} className="upload-preview-thumb rounded" src={file.previewUrl} />
+              )}
             </div>
           ))}
         </div>

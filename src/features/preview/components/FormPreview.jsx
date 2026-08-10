@@ -237,7 +237,7 @@ function FormPreview({ form, onSubmitted }) {
   };
 
   return (
-    <div className="card border-0 shadow-sm">
+    <div className="card border-0 shadow-sm form-preview-card">
       {showSuccess && (
         <div className="submission-modal" role="dialog" aria-modal="true" aria-labelledby="submitSuccessTitle">
           <div className="submission-card">
@@ -259,12 +259,12 @@ function FormPreview({ form, onSubmitted }) {
           </div>
         </div>
       )}
-      <div className="card-body p-4 p-lg-5">
-        <div className="mb-4">
-          <h3 className="mb-1">{form.name}</h3>
-          <p className="text-muted mb-0">{form.description}</p>
+      <div className="card-body form-preview-body">
+        <div className="form-preview-header">
+          <h3 className="form-preview-title">{form.name}</h3>
+          {form.description ? <p className="form-preview-description">{form.description}</p> : null}
         </div>
-        <form onReset={handleReset} onSubmit={handleSubmit}>
+        <form className="form-preview-form" onReset={handleReset} onSubmit={handleSubmit}>
           {layoutChildren.map((node) => renderNode(node))}
         </form>
       </div>
