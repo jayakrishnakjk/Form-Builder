@@ -79,10 +79,7 @@ export const createBaseField = (type) => {
   };
 
   if (['select', 'multiselect', 'radio', 'autocomplete'].includes(type)) {
-    field.apiBinding.options = [
-      { label: 'Option 1', value: 'option_1' },
-      { label: 'Option 2', value: 'option_2' },
-    ];
+    field.apiBinding.options = DEFAULT_FIELD_OPTIONS.map((option) => ({ ...option }));
     field.defaultValue = type === 'multiselect' ? [] : '';
   }
 

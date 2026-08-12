@@ -16,20 +16,18 @@ import {
   shouldInlineButtons,
 } from '@/shared/utils/inlineButtonsLayout';
 
-const createInitialData = (children = []) => createFormDataFromLayout(children);
-
 const EMPTY_LAYOUT_CHILDREN = [];
 
 function FormPreview({ form, onSubmitted }) {
   const { showToast } = useToast();
   const layoutChildren = form?.layout?.children ?? EMPTY_LAYOUT_CHILDREN;
-  const [formData, setFormData] = useState(() => createInitialData(layoutChildren));
+  const [formData, setFormData] = useState(() => createFormDataFromLayout(layoutChildren));
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
   const flatFields = useMemo(() => flattenFields(layoutChildren), [layoutChildren]);
 
   useEffect(() => {
-    const defaults = applyFormulas(flatFields, createInitialData(layoutChildren));
+    const defaults = applyFormulas(flatFields, createFormDataFromLayout(layoutChildren));
     setFormData(defaults);
     setErrors({});
     flatFields.forEach((field) => executeEventScript(field.events?.onLoad, { field, formData: defaults }));
@@ -226,12 +224,11 @@ function FormPreview({ form, onSubmitted }) {
     }
 
     setShowSuccess(true);
-    console.log('Submitted form payload', formData);
   };
 
   const handleReset = (event) => {
     event.preventDefault();
-    const defaults = applyFormulas(flatFields, createInitialData(layoutChildren));
+    const defaults = applyFormulas(flatFields, createFormDataFromLayout(layoutChildren));
     setFormData(defaults);
     setErrors({});
   };

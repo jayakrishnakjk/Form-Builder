@@ -38,16 +38,3 @@ export const FIELD_CATALOG = [
 
 export const CONTAINER_TYPES = ['root', 'row', 'column', 'section', 'card', 'accordion', 'tabs', 'group'];
 
-export const FORM_EVENTS = [
-  'onLoad',
-  'onChange',
-  'onBlur',
-  'onFocus',
-  'onClick',
-  'onSelect',
-  'onUpload',
-  'onValidate',
-  'onSubmit',
-];
-
-export const FIELD_TYPES = FIELD_CATALOG.flatMap((group) => group.items);

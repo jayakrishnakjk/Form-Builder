@@ -30,17 +30,6 @@ export const syncFormFields = (form) => ({
   })),
 });
 
-export const parseJsonInput = (value) => {
-  if (!value) {
-    return null;
-  }
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-};
-
 const simplifyField = (field) => {
   const simple = {};
 
@@ -66,7 +55,7 @@ const simplifyField = (field) => {
   return simple;
 };
 
-export const toSimpleForm = (form) => ({
+const toSimpleForm = (form) => ({
   id: form.id,
   name: form.name ?? '',
   description: form.description ?? '',

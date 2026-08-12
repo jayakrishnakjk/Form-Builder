@@ -6,8 +6,3 @@ import axios from 'axios';
 export const apiClient = axios.create({
   timeout: 15000,
 });
-
-export async function fetchJson(url, config = {}) {
-  const response = await apiClient.get(url, config);
-  return response.data;
-}

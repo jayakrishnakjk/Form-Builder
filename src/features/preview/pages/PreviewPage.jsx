@@ -1,38 +1,24 @@
-import { useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormPreview from '@/features/preview/components/FormPreview';
+import { ROUTES } from '@/shared/constants/routes';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
+import { useLoadedForm } from '@/shared/hooks/useLoadedForm';
 
 function PreviewPage() {
   const { formId } = useParams();
   const navigate = useNavigate();
-  const { forms, activeForm, loadForm, getPreviewDraft, returnToBuilderFromPreview } =
-    useFormBuilder();
-
-  useEffect(() => {
-    if (formId) {
-      loadForm(formId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formId]);
-
-  const previewDraft = getPreviewDraft();
-  const form = useMemo(() => {
-    if (previewDraft?.id === formId) {
-      return previewDraft;
-    }
-    return forms.find((item) => item.id === formId) || activeForm;
-  }, [previewDraft, formId, forms, activeForm]);
+  const { returnToBuilderFromPreview } = useFormBuilder();
+  const form = useLoadedForm(formId, { preferPreviewDraft: true });
 
   const goToBuilder = () => {
     const targetId = formId || form?.id;
     if (!targetId) {
-      navigate('/dashboard');
+      navigate(ROUTES.dashboard);
       return;
     }
     returnToBuilderFromPreview(targetId);
     // Replace preview entry so Create Form → Back goes to project, not Preview.
-    navigate(`/builder/${targetId}`, { replace: true });
+    navigate(ROUTES.builder(targetId), { replace: true });
   };
 
   if (!form) {
@@ -63,7 +49,7 @@ function PreviewPage() {
           form={form}
           onSubmitted={() => {
             if (form.metadata?.projectId) {
-              navigate(`/projects/${form.metadata.projectId}`);
+              navigate(ROUTES.projectDetails(form.metadata.projectId));
             }
           }}
         />

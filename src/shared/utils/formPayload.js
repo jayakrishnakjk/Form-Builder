@@ -1,13 +1,5 @@
-import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
+import { NON_PAYLOAD_FIELD_TYPES } from '@/shared/constants/fieldTypes';
 import { flattenFields } from './tree';
-
-const NON_PAYLOAD_FIELD_TYPES = new Set([
-  ...CONTAINER_TYPES,
-  'button',
-  'heading',
-  'divider',
-  'html',
-]);
 
 export const isFormPayloadField = (field) =>
   Boolean(field?.objectKey) && !NON_PAYLOAD_FIELD_TYPES.has(field.type);

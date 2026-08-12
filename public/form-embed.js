@@ -1,3 +1,8 @@
+/**
+ * Embed host script — keep keys in sync with:
+ * - src/shared/constants/storageKeys.js → FORM_SUBMISSIONS_KEY
+ * - src/shared/utils/embedMessaging.js → FORM_EMBED_MESSAGE_TYPE
+ */
 (function () {
   var STORAGE_KEY = 'formbuilder:form-submissions';
   var MESSAGE_TYPE = 'formbuilder:submit';
@@ -38,7 +43,7 @@
 
       store[targetFormId] = entries;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    } catch (error) {
+    } catch {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({

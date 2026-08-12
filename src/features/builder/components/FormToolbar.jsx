@@ -20,11 +20,10 @@ function FormToolbar() {
     saveActiveForm,
     capturePreviewDraft,
   } = useFormBuilder();
-  const [prettyMode] = useState(true);
   const [showJsonStudio, setShowJsonStudio] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
 
-  const exportedJson = useMemo(() => exportJson(activeForm, prettyMode), [activeForm, prettyMode]);
+  const exportedJson = useMemo(() => exportJson(activeForm, true), [activeForm]);
 
   const handleSave = () => {
     saveActiveForm('Form saved');
@@ -34,7 +33,7 @@ function FormToolbar() {
       activeForm.metadata?.projectId || getBuilderReturnProjectId();
     if (projectId) {
       setBuilderReturnProjectId(projectId);
-      navigate(`/projects/${projectId}`, { replace: true });
+      navigate(ROUTES.projectDetails(projectId), { replace: true });
     }
   };
 

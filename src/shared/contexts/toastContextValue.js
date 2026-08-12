@@ -1,5 +1,3 @@
 import { createContext } from 'react';
 
-const ToastContext = createContext(null);
-
-export default ToastContext;
+export const ToastContext = createContext(null);

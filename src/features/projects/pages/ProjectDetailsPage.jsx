@@ -154,7 +154,7 @@ function ProjectDetailsPage() {
                       onClick={() => openBuilder(form.id)}
                       type="button"
                     >
-                      Edit Form
+                      Edit Form1
                     </button>
                   <button className="btn btn-outline-danger btn-sm" onClick={() => handleDeleteSampleForm(form.id)} type="button">Delete</button>
                 </div>

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import ToastContext from './toastContextValue';
+import { ToastContext } from './toastContextValue';
 
 let toastIdCounter = 0;
 

@@ -1,8 +1,8 @@
+import { NON_INPUT_FIELD_TYPES } from '@/shared/constants/fieldTypes';
+
 const isEmpty = (value) => value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}/;
-
-const NON_INPUT_FIELD_TYPES = new Set(['button', 'heading', 'divider', 'html', 'hidden']);
 
 export const validateField = (field, value, formData = {}) => {
   if (NON_INPUT_FIELD_TYPES.has(field.type)) {

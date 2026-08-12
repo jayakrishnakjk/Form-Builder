@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
-import { getRowSlotTemplate } from '@/shared/constants/defaults';
+import { getRemainingRowWidth, getRowSlotTemplate } from '@/shared/constants/defaults';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import {
   groupChildrenForButtonLayout,
@@ -151,12 +151,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
   const [optionsDialogOpen, setOptionsDialogOpen] = useState(false);
   const [buttonSettingsOpen, setButtonSettingsOpen] = useState(false);
   const rowSlotTemplate = isRow ? getRowSlotTemplate(node) : null;
-  const remainingRowWidth = isRow
-    ? Math.max(
-        0,
-        12 - (node.children || []).reduce((sum, child) => sum + (Number(child.width) || 6), 0),
-      )
-    : 0;
+  const remainingRowWidth = isRow ? getRemainingRowWidth(node.children) : 0;
 
   const renderNestedChild = (child) => (
     <CanvasNode
