@@ -11,7 +11,7 @@ function ProjectDetailsPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { deleteForm, forms, loadForm } = useFormBuilder();
-  const { getProjectById, updateProject, projects } = useProjects();
+  const { getProjectById, projects } = useProjects();
   const project = getProjectById(projectId);
 
   useEffect(() => {
@@ -29,8 +29,7 @@ function ProjectDetailsPage() {
           form.metadata?.projectId === project.id && form.metadata?.savedToProject === true,
       )
     : [];
-  const sampleForms = project?.sampleForms || [];
-  const allFormsCount = sampleForms.length + savedForms.length;
+  const allFormsCount = savedForms.length;
 
   useEffect(() => {
     if (!project) {
@@ -80,14 +79,6 @@ function ProjectDetailsPage() {
     showToast(form ? `Form "${form.name}" deleted.` : 'Form deleted.', 'success');
   };
 
-  const handleDeleteSampleForm = (formId) => {
-    const form = sampleForms.find((f) => f.id === formId);
-    updateProject(project.id, {
-      sampleForms: sampleForms.filter((form) => form.id !== formId),
-    });
-    showToast(form ? `Sample form "${form.name}" deleted.` : 'Sample form deleted.', 'success');
-  };
-
   return (
     <div className="page-stack project-details-page">
       <div className="d-flex flex-wrap gap-2 justify-content-end align-items-center">
@@ -131,37 +122,13 @@ function ProjectDetailsPage() {
         <div className="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
           <div>
             <h2 className="h5 mb-1">Forms</h2>
-            <p className="text-muted mb-0">Sample forms plus forms created for this project.</p>
+            <p className="text-muted mb-0">Forms created for this project.</p>
           </div>
 
         </div>
 
         {allFormsCount ? (
           <div className="row g-4">
-            {sampleForms.map((form) => (
-              <div className="col-lg-4 col-md-6 col-12" key={form.id}>
-                <div className="form-card h-100">
-                <div>
-                  <h3 className="h6 mb-1">{form.name}</h3>
-                  <div className="small text-muted">Sample project form</div>
-                </div>
-                <div className="form-actions">
-                  {/* <span className={`badge ${form.status === 'published' ? 'text-bg-success' : 'text-bg-warning'}`}>
-                    {form.status}
-                  </span> */}
-                   <button
-                      className="btn btn-outline-primary btn-sm"
-                      onClick={() => openBuilder(form.id)}
-                      type="button"
-                    >
-                      Edit Form1
-                    </button>
-                  <button className="btn btn-outline-danger btn-sm" onClick={() => handleDeleteSampleForm(form.id)} type="button">Delete</button>
-                </div>
-              </div>
-              </div>
-            ))}
-
             {savedForms.map((form) => (
               <div className="col-lg-4 col-md-6 col-12" key={form.id}>
                 <div className="form-card h-100">

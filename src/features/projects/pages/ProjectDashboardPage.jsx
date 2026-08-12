@@ -47,16 +47,11 @@ function ProjectDashboardPage() {
 
   const getProjectForms = (project) =>
     forms.filter((form) => form.metadata?.projectId === project.id && form.metadata?.savedToProject === true);
-  const getFormsCount = (project) => (project.sampleForms?.length || 0) + getProjectForms(project).length;
-  const sampleForms = projects.flatMap((project) => project.sampleForms || []);
+  const getFormsCount = (project) => getProjectForms(project).length;
   const savedProjectForms = forms.filter((form) => form.metadata?.projectId && form.metadata?.savedToProject === true);
-  const totalForms = sampleForms.length + savedProjectForms.length;
-  const publishedForms =
-    sampleForms.filter((form) => form.status === 'published').length +
-    savedProjectForms.filter((form) => form.status === 'published').length;
-  const draftForms =
-    sampleForms.filter((form) => form.status !== 'published').length +
-    savedProjectForms.filter((form) => form.status !== 'published').length;
+  const totalForms = savedProjectForms.length;
+  const publishedForms = savedProjectForms.filter((form) => form.status === 'published').length;
+  const draftForms = savedProjectForms.filter((form) => form.status !== 'published').length;
 
   const statCards = [
     { label: 'Total Projects', value: projects.length, icon: 'bi-folder2-open', tone: 'blue' },

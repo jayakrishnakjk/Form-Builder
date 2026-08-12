@@ -16,7 +16,6 @@ export const createProject = ({
     primaryColor,
     secondaryColor,
     logo,
-    sampleForms: [],
     createdAt: now,
     updatedAt: now,
   };

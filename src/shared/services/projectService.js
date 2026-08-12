@@ -1,19 +1,18 @@
 import { PROJECT_STORAGE_KEY } from '../constants/storageKeys';
-import { SAMPLE_PROJECTS } from '../constants/sampleProjects';
 
 export const projectService = {
   loadAll() {
     const raw = localStorage.getItem(PROJECT_STORAGE_KEY);
     if (!raw) {
-      localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify(SAMPLE_PROJECTS));
-      return SAMPLE_PROJECTS;
+      localStorage.setItem(PROJECT_STORAGE_KEY, JSON.stringify([]));
+      return [];
     }
 
     try {
       const projects = JSON.parse(raw);
-      return Array.isArray(projects) && projects.length ? projects : SAMPLE_PROJECTS;
+      return Array.isArray(projects) ? projects : [];
     } catch {
-      return SAMPLE_PROJECTS;
+      return [];
     }
   },
 

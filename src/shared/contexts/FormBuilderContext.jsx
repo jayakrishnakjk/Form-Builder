@@ -6,7 +6,6 @@ import {
   createEqualColumns,
   getRemainingRowWidth,
 } from '../constants/defaults';
-import { SAMPLE_FORMS } from '../schemas/sampleForms';
 import { CONTAINER_TYPES } from '../constants/fieldCatalog';
 import { formService } from '../services/formService';
 import { exportJson, importJson, syncFormFields } from '../utils/formSerializer';
@@ -184,13 +183,6 @@ export function FormBuilderProvider({ children }) {
     setActiveFormId(form.id);
     setSelectedFieldId(null);
     return form.id;
-  };
-
-  const installSamples = () => {
-    const samples = SAMPLE_FORMS;
-    setForms(samples);
-    setActiveFormId(samples[0]?.id || null);
-    setSelectedFieldId(null);
   };
 
   const loadForm = (id) => {
@@ -593,7 +585,6 @@ export function FormBuilderProvider({ children }) {
     selectedContainerId,
     setSelectedFieldId,
     createForm,
-    installSamples,
     loadForm,
     beginEditSession,
     commitEditSession,

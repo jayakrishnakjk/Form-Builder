@@ -8,7 +8,6 @@ function DashboardPage() {
   const {
     forms,
     createForm,
-    installSamples,
     loadForm,
     deleteForm,
     duplicateForm,
@@ -32,9 +31,6 @@ function DashboardPage() {
           <div className="d-flex flex-wrap gap-2">
             <button className="btn btn-primary" onClick={handleCreate} type="button">
               <i className="bi bi-plus-circle me-2" />Create Form
-            </button>
-            <button className="btn btn-outline-secondary" onClick={() => { installSamples(); showToast('Sample forms reset successfully.', 'success'); }} type="button">
-              <i className="bi bi-arrow-clockwise me-2" />Reset Sample Forms
             </button>
           </div>
         </div>
