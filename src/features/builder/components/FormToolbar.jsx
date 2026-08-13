@@ -79,6 +79,11 @@ function FormToolbar() {
             </div>
           </div>
 
+          <button className="btn btn-outline-primary form-toolbar-btn" type="button">
+            <i className="bi bi-file-earmark-ruled" />
+            <span>Master Form</span>
+          </button>
+
           <div className="form-toolbar-actions" role="toolbar" aria-label="Form actions">
             <button className="btn btn-primary form-toolbar-btn" onClick={handleSave} type="button">
               <i className="bi bi-save" />
