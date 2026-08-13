@@ -936,6 +936,17 @@ a:hover {
   transition: all 0.2s ease;
 }
 
+.master-form-palette-row .master-form-delete-btn {
+  flex: 0 0 auto;
+  min-width: 40px;
+  padding-inline: 0.65rem;
+}
+
+.master-form-palette-row .master-form-delete-btn:hover {
+  background: #fff5f5;
+  border-color: #fecaca;
+}
+
 .field-options-fetch {
   background: #f8fafc;
 }

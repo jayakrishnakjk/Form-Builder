@@ -2,7 +2,7 @@ import CanvasNode from './CanvasNode';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 
 function Canvas() {
-  const { activeForm, setSelectedFieldId, createField, moveFieldToParent } = useFormBuilder();
+  const { activeForm, setSelectedFieldId, createField, insertMasterForm, moveFieldToParent } = useFormBuilder();
 
   const handleDrop = (event, parentId = 'root', dropOptions = {}) => {
     event.preventDefault();
@@ -13,6 +13,10 @@ function Canvas() {
       return;
     }
     if (payload.mode === 'create') {
+      if (payload.type === 'masterForm' && payload.masterFormId) {
+        insertMasterForm(payload.masterFormId, parentId, dropOptions);
+        return;
+      }
       createField(payload.type, parentId, {
         columnCount: payload.columnCount,
         headingLevel: payload.headingLevel,

@@ -9,6 +9,7 @@ import {
   setBuilderReturnProjectId,
 } from '@/shared/utils/builderNavigation';
 import EmbedScriptDialog from './EmbedScriptDialog';
+import MasterFormDialog from './MasterFormDialog';
 
 function FormToolbar() {
   const navigate = useNavigate();
@@ -19,9 +20,12 @@ function FormToolbar() {
     clearForm,
     saveActiveForm,
     capturePreviewDraft,
+    saveMasterForm,
+    clearCanvas,
   } = useFormBuilder();
   const [showJsonStudio, setShowJsonStudio] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
+  const [showMasterFormDialog, setShowMasterFormDialog] = useState(false);
 
   const exportedJson = useMemo(() => exportJson(activeForm, true), [activeForm]);
 
@@ -44,6 +48,17 @@ function FormToolbar() {
     // Capture live canvas so Preview shows unsaved work.
     capturePreviewDraft();
     navigate(ROUTES.preview(activeForm.id));
+  };
+
+  const handleMasterFormSave = (name) => {
+    const result = saveMasterForm(name);
+    if (!result.ok) {
+      showToast(result.message, 'error');
+      return;
+    }
+    clearCanvas();
+    showToast(`Master form "${name.trim()}" saved to Master Form section.`, 'success');
+    setShowMasterFormDialog(false);
   };
 
   return (
@@ -79,7 +94,11 @@ function FormToolbar() {
             </div>
           </div>
 
-          <button className="btn btn-outline-primary form-toolbar-btn" type="button">
+          <button
+            className="btn btn-outline-primary form-toolbar-btn"
+            onClick={() => setShowMasterFormDialog(true)}
+            type="button"
+          >
             <i className="bi bi-file-earmark-ruled" />
             <span>Master Form</span>
           </button>
@@ -139,6 +158,14 @@ function FormToolbar() {
             formId={activeForm.id}
             formName={activeForm.name}
             onClose={() => setShowEmbedDialog(false)}
+          />
+        )}
+
+        {showMasterFormDialog && (
+          <MasterFormDialog
+            hasCanvasContent={(activeForm?.layout?.children?.length ?? 0) > 0}
+            onClose={() => setShowMasterFormDialog(false)}
+            onSave={handleMasterFormSave}
           />
         )}
       </div>

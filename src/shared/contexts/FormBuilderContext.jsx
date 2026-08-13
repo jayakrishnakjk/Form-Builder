@@ -8,6 +8,7 @@ import {
 } from '../constants/defaults';
 import { CONTAINER_TYPES } from '../constants/fieldCatalog';
 import { formService } from '../services/formService';
+import { masterFormService } from '../services/masterFormService';
 import { exportJson, importJson, syncFormFields } from '../utils/formSerializer';
 import {
   getBuilderReturnProjectId,
@@ -39,6 +40,7 @@ const cloneNodeWithNewIds = (node) => {
 
 export function FormBuilderProvider({ children }) {
   const [forms, setForms] = useState(() => formService.loadAll());
+  const [masterForms, setMasterForms] = useState(() => masterFormService.loadAll());
   const [activeFormId, setActiveFormId] = useState(() => formService.loadAll()[0]?.id || null);
   const [selectedFieldId, setSelectedFieldId] = useState(null);
   const [clipboardField, setClipboardField] = useState(null);
@@ -213,6 +215,19 @@ export function FormBuilderProvider({ children }) {
     setJsonDraft('');
   };
 
+  const clearCanvas = () => {
+    updateActiveForm((form) =>
+      syncFormFields({
+        ...form,
+        layout: {
+          ...form.layout,
+          children: [],
+        },
+      }),
+    );
+    setSelectedFieldId(null);
+  };
+
   const saveVersionSnapshot = (note = 'Snapshot saved') => {
     updateActiveForm((form) => ({
       ...form,
@@ -374,6 +389,83 @@ export function FormBuilderProvider({ children }) {
       },
     }));
     setSelectedFieldId(field.id);
+  };
+
+  const saveMasterForm = (name) => {
+    const trimmed = name?.trim();
+    if (!trimmed) {
+      return { ok: false, message: 'Form name is required.' };
+    }
+
+    const children = activeForm.layout?.children || [];
+    if (!children.length) {
+      return { ok: false, message: 'Add at least one field to the canvas before saving.' };
+    }
+
+    const entry = {
+      id: `master_${crypto.randomUUID()}`,
+      name: trimmed,
+      children: cloneDeep(children),
+      createdAt: new Date().toISOString(),
+    };
+
+    setMasterForms((current) => {
+      const next = [...current, entry];
+      masterFormService.saveAll(next);
+      return next;
+    });
+
+    return { ok: true };
+  };
+
+  const deleteMasterForm = (masterFormId) => {
+    let deletedName = '';
+    setMasterForms((current) => {
+      const target = current.find((item) => item.id === masterFormId);
+      deletedName = target?.name || '';
+      const next = current.filter((item) => item.id !== masterFormId);
+      masterFormService.saveAll(next);
+      return next;
+    });
+    return deletedName;
+  };
+
+  const insertMasterForm = (masterFormId, parentId = selectedContainerId, options = {}) => {
+    const master = masterForms.find((item) => item.id === masterFormId);
+    if (!master?.children?.length) {
+      return;
+    }
+
+    const clonedNodes = master.children.map((node) => cloneNodeWithNewIds(node));
+    const insertAtIndex =
+      options.insertAtIndex === undefined || options.insertAtIndex === null
+        ? null
+        : Number(options.insertAtIndex);
+
+    updateActiveForm((form) => {
+      let children = form.layout.children;
+      clonedNodes.forEach((node, index) => {
+        if (insertAtIndex !== null && !Number.isNaN(insertAtIndex) && parentId !== 'root') {
+          children = insertNodeToParentAtIndex(
+            children,
+            parentId,
+            node,
+            insertAtIndex + index,
+          );
+        } else {
+          children = appendNodeToParent(children, parentId, node);
+        }
+      });
+      return {
+        ...form,
+        layout: {
+          ...form.layout,
+          children,
+        },
+      };
+    });
+
+    setSelectedFieldId(clonedNodes[0]?.id || null);
   };
 
   const updateField = (fieldId, patch) => {
@@ -582,6 +674,7 @@ export function FormBuilderProvider({ children }) {
 
   const value = {
     forms,
+    masterForms,
     activeForm,
     activeFormId,
     selectedFieldId,
@@ -604,10 +697,14 @@ export function FormBuilderProvider({ children }) {
     returnToBuilderFromPreview,
     updateFormMeta,
     clearForm,
+    clearCanvas,
     saveVersionSnapshot,
     saveActiveForm,
     autoSaveActiveForm,
     createField,
+    saveMasterForm,
+    deleteMasterForm,
+    insertMasterForm,
     updateField,
     deleteField,
     duplicateField,
