@@ -41,13 +41,19 @@ function LeftSidebar() {
                             if (item.columnCount) {
                               payload.columnCount = item.columnCount;
                             }
+                            if (item.headingLevel) {
+                              payload.headingLevel = item.headingLevel;
+                            }
                             event.dataTransfer.setData('application/json', JSON.stringify(payload));
                           }}
                           onClick={() =>
                             createField(
                               item.type,
                               undefined,
-                              item.columnCount ? { columnCount: item.columnCount } : {},
+                              {
+                                ...(item.columnCount ? { columnCount: item.columnCount } : {}),
+                                ...(item.headingLevel ? { headingLevel: item.headingLevel } : {}),
+                              },
                             )
                           }
                           type="button"

@@ -157,6 +157,8 @@ function FieldFactory({ field, value, error, onChange, onBlur, onClick, formData
         const Tag = field.metadata?.level || 'h4';
         return <Tag className="mb-0">{field.defaultValue || field.label}</Tag>;
       }
+      case 'paragraph':
+        return <p className="mb-0">{field.defaultValue || field.label}</p>;
       case 'divider':
         return <hr className="my-2" />;
       case 'html':
@@ -203,7 +205,7 @@ function FieldFactory({ field, value, error, onChange, onBlur, onClick, formData
 
   return (
     <div>
-      {!['checkbox', 'switch', 'heading', 'divider', 'html', 'button'].includes(field.type) && (
+      {!['checkbox', 'switch', 'heading', 'paragraph', 'divider', 'html', 'button'].includes(field.type) && (
         <label className="form-label fw-semibold">
           {field.label} {(field.required || field.validation?.required) && <span className="text-danger">*</span>}
         </label>

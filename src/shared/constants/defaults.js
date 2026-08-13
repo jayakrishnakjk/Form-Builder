@@ -94,6 +94,12 @@ export const createBaseField = (type) => {
     field.metadata.level = 'h4';
   }
 
+  if (type === 'paragraph') {
+    field.defaultValue = 'Paragraph text';
+    field.placeholder = '';
+    field.label = 'Paragraph';
+  }
+
   if (type === 'divider') {
     field.placeholder = '';
   }

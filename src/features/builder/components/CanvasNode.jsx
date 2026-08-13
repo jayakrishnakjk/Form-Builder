@@ -40,7 +40,12 @@ const renderNodePreview = (node) => {
   }
 
   if (node.type === 'heading') {
-    return <div className="fw-bold">{node.defaultValue || node.label}</div>;
+    const Tag = node.metadata?.level || 'h4';
+    return <Tag className="mb-0">{node.defaultValue || node.label}</Tag>;
+  }
+
+  if (node.type === 'paragraph') {
+    return <p className="mb-0">{node.defaultValue || node.label}</p>;
   }
 
   if (node.type === 'divider') {

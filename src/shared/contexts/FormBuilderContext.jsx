@@ -334,6 +334,13 @@ export function FormBuilderProvider({ children }) {
 
     const field = createBaseField(type);
 
+    if (type === 'heading' && options.headingLevel) {
+      const level = options.headingLevel;
+      field.metadata.level = level;
+      field.label = level.toUpperCase();
+      field.defaultValue = `${level.toUpperCase()} Heading`;
+    }
+
     // Single Column into a partially filled Row → use leftover grid width so it sits side-by-side.
     if (type === 'column' && columnCount <= 1) {
       const parent =

@@ -16,6 +16,13 @@ export const FIELD_CATALOG = [
    {
     category: 'Basic Fields',
     items: [
+      { type: 'heading', label: 'H1', icon: 'bi-card-heading', headingLevel: 'h1' },
+      { type: 'heading', label: 'H2', icon: 'bi-card-heading', headingLevel: 'h2' },
+      { type: 'heading', label: 'H3', icon: 'bi-card-heading', headingLevel: 'h3' },
+      { type: 'heading', label: 'H4', icon: 'bi-card-heading', headingLevel: 'h4' },
+      { type: 'heading', label: 'H5', icon: 'bi-card-heading', headingLevel: 'h5' },
+      { type: 'heading', label: 'H6', icon: 'bi-card-heading', headingLevel: 'h6' },
+      { type: 'paragraph', label: 'Paragraph', icon: 'bi-text-paragraph' },
       { type: 'text', label: 'Text', icon: 'bi-input-cursor-text' },
       { type: 'textarea', label: 'Textarea', icon: 'bi-textarea-t' },
       { type: 'number', label: 'Number', icon: 'bi-123' },

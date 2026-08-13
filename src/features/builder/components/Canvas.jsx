@@ -15,6 +15,7 @@ function Canvas() {
     if (payload.mode === 'create') {
       createField(payload.type, parentId, {
         columnCount: payload.columnCount,
+        headingLevel: payload.headingLevel,
         ...dropOptions,
       });
     }
