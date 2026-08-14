@@ -219,6 +219,8 @@ export function FormBuilderProvider({ children }) {
     updateActiveForm((form) =>
       syncFormFields({
         ...form,
+        name: 'Form Name',
+        description: 'Form Description',
         layout: {
           ...form.layout,
           children: [],
