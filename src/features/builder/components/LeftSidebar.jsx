@@ -1,10 +1,23 @@
 import { FIELD_CATALOG } from '@/shared/constants/fieldCatalog';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import { useToast } from '@/shared/hooks/useToast';
+import { getBuilderReturnProjectId } from '@/shared/utils/builderNavigation';
 
 function LeftSidebar() {
-  const { createField, deleteMasterForm, insertMasterForm, masterForms } = useFormBuilder();
+  const {
+    activeForm,
+    createField,
+    deleteMasterForm,
+    insertMasterForm,
+    loadMasterFormForEdit,
+    masterForms,
+  } = useFormBuilder();
   const { showToast } = useToast();
+
+  const currentProjectId = activeForm?.metadata?.projectId || getBuilderReturnProjectId() || null;
+  const visibleMasterForms = currentProjectId
+    ? masterForms.filter((master) => master.projectId === currentProjectId)
+    : masterForms.filter((master) => !master.projectId);
 
   const renderPaletteButton = (item, key) => (
     <div className="col-12" key={key}>
@@ -65,7 +78,22 @@ function LeftSidebar() {
           <span className="text-truncate">{master.name}</span>
         </button>
         <button
-          aria-label={`Delete ${master.name}`}
+          aria-label={`Edit ${master.name}`}
+          className="btn btn-light border master-form-edit-btn"
+          onClick={() => {
+            const result = loadMasterFormForEdit(master.id);
+            if (result.ok) {
+              showToast(`Editing "${master.name}". Save or Master Form will update the same master form.`, 'success');
+            } else if (result.message) {
+              showToast(result.message, 'error');
+            }
+          }}
+          title="Edit master form"
+          type="button"
+        >
+          <i className="bi bi-pencil-square" />
+        </button>
+        <button
           className="btn btn-light border text-danger master-form-delete-btn"
           onClick={() => {
             const deletedName = deleteMasterForm(master.id);
@@ -133,9 +161,9 @@ function LeftSidebar() {
               data-bs-parent="#fieldLibrary"
             >
               <div className="accordion-body p-2 builder-field-library-panel-scroll">
-                {masterForms.length ? (
+                {visibleMasterForms.length ? (
                   <div className="row g-2">
-                    {masterForms.map((master) => renderMasterFormItem(master))}
+                    {visibleMasterForms.map((master) => renderMasterFormItem(master))}
                   </div>
                 ) : (
                   <p className="small text-muted mb-0 px-1">

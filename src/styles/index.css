@@ -190,16 +190,18 @@ a:hover {
 
 .form-toolbar-layout {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: flex-end;
-  gap: 1rem 1.25rem;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .form-toolbar-meta {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1fr);
-  gap: 0.85rem 1rem;
-  flex: 1 1 420px;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -208,6 +210,53 @@ a:hover {
   flex-direction: column;
   gap: 0.35rem;
   min-width: 0;
+  flex: 0 1 200px;
+}
+
+.form-toolbar-field--description {
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+
+.form-toolbar-name,
+.form-toolbar-description {
+  min-height: 40px;
+  border-radius: 10px;
+  border-color: #e2e8f0;
+  background: #fff;
+}
+
+.form-toolbar-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.form-toolbar-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.form-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.form-toolbar-btn i {
+  font-size: 0.9rem;
+  line-height: 1;
 }
 
 .form-toolbar-label {
@@ -217,46 +266,7 @@ a:hover {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #64748b;
-}
-
-.form-toolbar-name,
-.form-toolbar-description {
-  min-height: 42px;
-  border-radius: 10px;
-  border-color: #e2e8f0;
-  background: #fff;
-}
-
-.form-toolbar-name {
-  font-size: 1.05rem;
-  font-weight: 600;
-}
-
-.form-toolbar-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  flex: 0 1 auto;
-  margin-left: auto;
-}
-
-.form-toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  min-height: 40px;
-  padding: 0.45rem 0.85rem;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 600;
   white-space: nowrap;
-}
-
-.form-toolbar-btn i {
-  font-size: 0.95rem;
-  line-height: 1;
 }
 
 .form-toolbar-json {
@@ -266,15 +276,26 @@ a:hover {
 }
 
 @media (max-width: 991.98px) {
+  .form-toolbar-layout {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
   .form-toolbar-meta {
-    grid-template-columns: 1fr;
-    flex-basis: 100%;
+    flex: 1 1 100%;
+  }
+
+  .form-toolbar-field,
+  .form-toolbar-field--description {
+    flex: 1 1 160px;
+    max-width: none;
   }
 
   .form-toolbar-actions {
     width: 100%;
     margin-left: 0;
     justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 
@@ -942,9 +963,36 @@ a:hover {
   padding-inline: 0.65rem;
 }
 
+.master-form-palette-row .master-form-edit-btn {
+  flex: 0 0 auto;
+  min-width: 40px;
+  padding-inline: 0.65rem;
+}
+
 .master-form-palette-row .master-form-delete-btn:hover {
   background: #fff5f5;
   border-color: #fecaca;
+}
+
+.master-form-palette-row .master-form-edit-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.canvas-node--master-ref {
+  border-color: #c7d2fe;
+  background: #f8faff;
+}
+
+.master-form-ref-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.nested-dropzone--readonly {
+  pointer-events: none;
 }
 
 .field-options-fetch {

@@ -1,5 +1,6 @@
 import { createBaseField } from '../constants/defaults';
 import { cloneDeep, flattenFields } from './tree';
+import { isMasterFormRef } from './masterFormUtils';
 
 const SIMPLE_FIELD_KEYS = [
   'id',
@@ -25,7 +26,9 @@ const SIMPLE_FIELD_KEYS = [
 export const syncFormFields = (form) => ({
   ...form,
   updatedAt: new Date().toISOString(),
-  fields: flattenFields(form.layout.children).map((field, index) => ({
+  fields: flattenFields(form.layout.children)
+    .filter((field) => !isMasterFormRef(field))
+    .map((field, index) => ({
     ...field,
     order: index + 1,
   })),
@@ -85,6 +88,20 @@ export const exportJson = (form, pretty = true) =>
 const restoreField = (field) => {
   if (!field || typeof field !== 'object') {
     return field;
+  }
+
+  if (isMasterFormRef(field)) {
+    return {
+      id: field.id,
+      type: field.type,
+      label: field.label || field.metadata?.masterFormName || 'Master Form',
+      objectKey: '',
+      metadata: {
+        masterFormId: field.metadata?.masterFormId || '',
+        masterFormName: field.metadata?.masterFormName || field.label || 'Master Form',
+      },
+      children: [],
+    };
   }
 
   const base = createBaseField(field.type || 'text');

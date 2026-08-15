@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import FieldFactory from '@/shared/components/fields/FieldFactory';
 import { apiClient } from '@/shared/services/apiClient';
 import { useToast } from '@/shared/hooks/useToast';
+import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
+import { resolveLayoutWithMasterForms } from '@/shared/utils/masterFormUtils';
 import { applyFormulas } from '@/shared/utils/formulaEngine';
 import { executeEventScript, getRuntimeFieldState } from '@/shared/utils/logicEngine';
 import { flattenFields } from '@/shared/utils/tree';
@@ -20,18 +22,23 @@ const EMPTY_LAYOUT_CHILDREN = [];
 
 function FormPreview({ form, onSubmitted }) {
   const { showToast } = useToast();
+  const { masterForms } = useFormBuilder();
   const layoutChildren = form?.layout?.children ?? EMPTY_LAYOUT_CHILDREN;
-  const [formData, setFormData] = useState(() => createFormDataFromLayout(layoutChildren));
+  const resolvedLayoutChildren = useMemo(
+    () => resolveLayoutWithMasterForms(layoutChildren, masterForms),
+    [layoutChildren, masterForms],
+  );
+  const [formData, setFormData] = useState(() => createFormDataFromLayout(resolvedLayoutChildren));
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
-  const flatFields = useMemo(() => flattenFields(layoutChildren), [layoutChildren]);
+  const flatFields = useMemo(() => flattenFields(resolvedLayoutChildren), [resolvedLayoutChildren]);
 
   useEffect(() => {
-    const defaults = applyFormulas(flatFields, createFormDataFromLayout(layoutChildren));
+    const defaults = applyFormulas(flatFields, createFormDataFromLayout(resolvedLayoutChildren));
     setFormData(defaults);
     setErrors({});
     flatFields.forEach((field) => executeEventScript(field.events?.onLoad, { field, formData: defaults }));
-  }, [flatFields, layoutChildren]);
+  }, [flatFields, resolvedLayoutChildren]);
 
   const handleFieldChange = (field, nextValue) => {
     const nextData = applyFormulas(flatFields, {
@@ -76,7 +83,7 @@ function FormPreview({ form, onSubmitted }) {
     const apiUrl = normalizeActionUrl(rawUrl);
 
     try {
-      await apiClient.post(apiUrl, buildFormPayload(formData, layoutChildren));
+      await apiClient.post(apiUrl, buildFormPayload(formData, resolvedLayoutChildren));
       showToast(
         field.metadata?.successToastMessage?.trim() || 'Action completed successfully.',
         'success',
@@ -190,7 +197,7 @@ function FormPreview({ form, onSubmitted }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const nextErrors = validateForm(layoutChildren, formData);
+    const nextErrors = validateForm(resolvedLayoutChildren, formData);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) {
       return;
@@ -205,7 +212,7 @@ function FormPreview({ form, onSubmitted }) {
     if (submitButton) {
       executeEventScript(submitButton.events?.onClick, { field: submitButton, formData });
       if (shouldCallButtonApi(submitButton) && submitButton.metadata?.apiUrl?.trim()) {
-        const payload = buildFormPayload(formData, layoutChildren);
+        const payload = buildFormPayload(formData, resolvedLayoutChildren);
         const redirectUrl = normalizeActionUrl(submitButton.metadata.apiUrl);
 
         persistSubmitPayload(payload, redirectUrl);
@@ -216,7 +223,7 @@ function FormPreview({ form, onSubmitted }) {
         return;
       }
       if (!shouldCallButtonApi(submitButton)) {
-        const payload = buildFormPayload(formData, layoutChildren);
+        const payload = buildFormPayload(formData, resolvedLayoutChildren);
         persistSubmitPayload(payload);
         showButtonSuccessToast(submitButton);
         return;
@@ -228,7 +235,7 @@ function FormPreview({ form, onSubmitted }) {
 
   const handleReset = (event) => {
     event.preventDefault();
-    const defaults = applyFormulas(flatFields, createFormDataFromLayout(layoutChildren));
+    const defaults = applyFormulas(flatFields, createFormDataFromLayout(resolvedLayoutChildren));
     setFormData(defaults);
     setErrors({});
   };
@@ -262,7 +269,7 @@ function FormPreview({ form, onSubmitted }) {
           {form.description ? <p className="form-preview-description">{form.description}</p> : null}
         </div>
         <form className="form-preview-form" onReset={handleReset} onSubmit={handleSubmit}>
-          {layoutChildren.map((node) => renderNode(node))}
+          {resolvedLayoutChildren.map((node) => renderNode(node))}
         </form>
       </div>
     </div>

@@ -9,7 +9,6 @@ import {
   setBuilderReturnProjectId,
 } from '@/shared/utils/builderNavigation';
 import EmbedScriptDialog from './EmbedScriptDialog';
-import MasterFormDialog from './MasterFormDialog';
 
 function FormToolbar() {
   const navigate = useNavigate();
@@ -22,14 +21,25 @@ function FormToolbar() {
     capturePreviewDraft,
     saveMasterForm,
     clearCanvas,
+    editingMasterFormId,
   } = useFormBuilder();
   const [showJsonStudio, setShowJsonStudio] = useState(false);
   const [showEmbedDialog, setShowEmbedDialog] = useState(false);
-  const [showMasterFormDialog, setShowMasterFormDialog] = useState(false);
 
   const exportedJson = useMemo(() => exportJson(activeForm, true), [activeForm]);
 
   const handleSave = () => {
+    if (editingMasterFormId) {
+      const name = activeForm.name?.trim();
+      const result = saveMasterForm(name, { finalize: true });
+      if (!result.ok) {
+        showToast(result.message, 'error');
+        return;
+      }
+      showToast('Master form updated successfully.', 'success');
+      return;
+    }
+
     saveActiveForm('Form saved');
     showToast('Form saved successfully.', 'success');
 
@@ -50,15 +60,29 @@ function FormToolbar() {
     navigate(ROUTES.preview(activeForm.id));
   };
 
-  const handleMasterFormSave = (name) => {
-    const result = saveMasterForm(name);
+  const handleMasterFormClick = () => {
+    const name = activeForm.name?.trim();
+    if (!name || name === 'Form Name') {
+      showToast('Enter a form name before saving as master form.', 'error');
+      return;
+    }
+
+    const result = saveMasterForm(name, { finalize: true });
     if (!result.ok) {
       showToast(result.message, 'error');
       return;
     }
-    clearCanvas();
-    showToast(`Master form "${name.trim()}" saved to Master Form section.`, 'success');
-    setShowMasterFormDialog(false);
+
+    if (!result.updated) {
+      clearCanvas();
+    }
+
+    showToast(
+      result.updated
+        ? `Master form "${name}" updated. Linked forms will use the latest changes.`
+        : `Master form "${name}" saved to Master Form section.`,
+      'success',
+    );
   };
 
   return (
@@ -94,16 +118,15 @@ function FormToolbar() {
             </div>
           </div>
 
-          <button
-            className="btn btn-outline-primary form-toolbar-btn"
-            onClick={() => setShowMasterFormDialog(true)}
-            type="button"
-          >
-            <i className="bi bi-file-earmark-ruled" />
-            <span>Master Form</span>
-          </button>
-
           <div className="form-toolbar-actions" role="toolbar" aria-label="Form actions">
+            <button
+              className="btn btn-outline-primary form-toolbar-btn"
+              onClick={handleMasterFormClick}
+              type="button"
+            >
+              <i className="bi bi-file-earmark-ruled" />
+              <span>Master Form</span>
+            </button>
             <button className="btn btn-primary form-toolbar-btn" onClick={handleSave} type="button">
               <i className="bi bi-save" />
               <span>Save</span>
@@ -158,14 +181,6 @@ function FormToolbar() {
             formId={activeForm.id}
             formName={activeForm.name}
             onClose={() => setShowEmbedDialog(false)}
-          />
-        )}
-
-        {showMasterFormDialog && (
-          <MasterFormDialog
-            hasCanvasContent={(activeForm?.layout?.children?.length ?? 0) > 0}
-            onClose={() => setShowMasterFormDialog(false)}
-            onSave={handleMasterFormSave}
           />
         )}
       </div>

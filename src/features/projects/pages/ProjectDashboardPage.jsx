@@ -9,7 +9,7 @@ import { useToast } from '@/shared/hooks/useToast';
 function ProjectDashboardPage() {
   const navigate = useNavigate();
   const { addProject, deleteProject, projects, updateProject } = useProjects();
-  const { forms } = useFormBuilder();
+  const { deleteProjectRelatedData, forms } = useFormBuilder();
   const { showToast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
@@ -35,12 +35,13 @@ function ProjectDashboardPage() {
   };
 
   const handleDelete = (projectId) => {
-    deleteProject(projectId);
     const project = projects.find((p) => p.id === projectId);
+    deleteProjectRelatedData(projectId);
+    deleteProject(projectId);
     showToast(
       project
-        ? `Project "${project.name}" deleted successfully.`
-        : 'Project deleted successfully.',
+        ? `Project "${project.name}" and all related forms deleted successfully.`
+        : 'Project and all related forms deleted successfully.',
       'success',
     );
   };

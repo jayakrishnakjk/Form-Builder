@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CONTAINER_TYPES } from '@/shared/constants/fieldCatalog';
 import { getRemainingRowWidth, getRowSlotTemplate } from '@/shared/constants/defaults';
 import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
+import { getMasterFormById, isMasterFormRef } from '@/shared/utils/masterFormUtils';
 import {
   groupChildrenForButtonLayout,
   shouldInlineButtons,
@@ -135,13 +136,101 @@ const renderNodePreview = (node) => {
   );
 };
 
-function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
+function CanvasNode({
+  node,
+  onDropNode,
+  inheritedButtonsInline = false,
+  linkedMasterFormId = null,
+}) {
   const {
     selectedFieldId,
     setSelectedFieldId,
     deleteField,
     updateField,
+    updateMasterFormField,
+    masterForms,
+    loadMasterFormForEdit,
   } = useFormBuilder();
+
+  const applyFieldPatch = (fieldId, patch) => {
+    if (linkedMasterFormId) {
+      updateMasterFormField(linkedMasterFormId, fieldId, patch);
+      return;
+    }
+    updateField(fieldId, patch);
+  };
+
+  const isLinkedMasterField = Boolean(linkedMasterFormId);
+
+  if (isMasterFormRef(node)) {
+    const master = getMasterFormById(masterForms, node.metadata?.masterFormId);
+    const linkedChildren = master?.children || [];
+    const isSelected = selectedFieldId === node.id;
+
+    return (
+      <div
+        className={['canvas-node', 'canvas-node--master-ref', isSelected ? 'selected-node' : '']
+          .filter(Boolean)
+          .join(' ')}
+        onClick={(event) => {
+          event.stopPropagation();
+          setSelectedFieldId(node.id);
+        }}
+      >
+        <div className="canvas-node-header">
+          <div className="canvas-node-title">
+            <div className="canvas-node-label">
+              <i className="bi bi-link-45deg text-primary" />
+              <span>{node.metadata?.masterFormName || master?.name || 'Master Form'}</span>
+              <span className="badge text-bg-light border ms-1">Linked</span>
+            </div>
+            <div className="canvas-node-sub">masterFormRef • updates with master form</div>
+          </div>
+          <div className="canvas-node-header-actions">
+            {master && (
+              <button
+                className="btn btn-sm canvas-node-settings"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  loadMasterFormForEdit(master.id);
+                }}
+                title="Edit master form"
+                type="button"
+              >
+                <i className="bi bi-pencil-square" />
+              </button>
+            )}
+            <button
+              className="btn btn-sm canvas-node-delete"
+              onClick={(event) => {
+                event.stopPropagation();
+                deleteField(node.id);
+              }}
+              title="Remove master form link"
+              type="button"
+            >
+              <i className="bi bi-trash" />
+            </button>
+          </div>
+        </div>
+        <div className="master-form-ref-body nested-dropzone">
+          {linkedChildren.length ? (
+            linkedChildren.map((child) => (
+              <CanvasNode
+                inheritedButtonsInline={inheritedButtonsInline}
+                key={child.id}
+                linkedMasterFormId={master.id}
+                node={child}
+                onDropNode={onDropNode}
+              />
+            ))
+          ) : (
+            <p className="small text-muted mb-0 px-1">Master form content unavailable.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const isContainer = CONTAINER_TYPES.includes(node.type);
   const isRow = node.type === 'row';
@@ -162,6 +251,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
     <CanvasNode
       inheritedButtonsInline={rowButtonsInline || inheritedButtonsInline}
       key={child.id}
+      linkedMasterFormId={linkedMasterFormId}
       node={child}
       onDropNode={onDropNode}
     />
@@ -179,7 +269,12 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
       return renderNestedChild(group.child);
     });
 
-  const renderRowColumnSlot = (slotWidth, slotIndex) => (
+  const renderRowColumnSlot = (slotWidth, slotIndex) => {
+    if (isLinkedMasterField) {
+      return null;
+    }
+
+    return (
     <div className={`col-12 col-md-${slotWidth}`} key={`${node.id}-add-slot-${slotIndex}`}>
       <div
         className="row-column-slot"
@@ -197,7 +292,8 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
         <span>Drop Column</span>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div
@@ -209,12 +305,16 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
       ]
         .filter(Boolean)
         .join(' ')}
-      draggable
+      draggable={!isLinkedMasterField}
       onClick={(event) => {
         event.stopPropagation();
         setSelectedFieldId(node.id);
       }}
       onDragStart={(event) => {
+        if (isLinkedMasterField) {
+          event.preventDefault();
+          return;
+        }
         if (
           event.target.closest('.canvas-node-inline-input') ||
           event.target.closest('.canvas-node-settings') ||
@@ -241,7 +341,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
                 className="canvas-node-label-input canvas-node-inline-input"
                 onChange={(event) => {
                   event.stopPropagation();
-                  updateField(node.id, { label: event.target.value });
+                  applyFieldPatch(node.id, { label: event.target.value });
                 }}
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) => event.stopPropagation()}
@@ -273,7 +373,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
                   onChange={(event) => {
                     event.stopPropagation();
                     const nextKey = event.target.value;
-                    updateField(node.id, { objectKey: nextKey, name: nextKey });
+                    applyFieldPatch(node.id, { objectKey: nextKey, name: nextKey });
                   }}
                   onClick={(event) => event.stopPropagation()}
                   onKeyDown={(event) => event.stopPropagation()}
@@ -301,7 +401,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
                 onChange={(event) => {
                   event.stopPropagation();
                   const required = event.target.checked;
-                  updateField(node.id, {
+                  applyFieldPatch(node.id, {
                     required,
                     validation: {
                       ...(node.validation || {}),
@@ -342,7 +442,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
               <i className="bi bi-gear" />
             </button>
           )}
-          {isLayoutContainer && showInlineButtonsToggle(node) && (
+          {isLayoutContainer && !isLinkedMasterField && showInlineButtonsToggle(node) && (
             <label
               className="canvas-node-inline-buttons-toggle"
               title="Buttons side by side"
@@ -354,7 +454,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
                 className="form-check-input"
                 onChange={(event) => {
                   event.stopPropagation();
-                  updateField(node.id, {
+                  applyFieldPatch(node.id, {
                     metadata: {
                       ...(node.metadata || {}),
                       buttonsInline: event.target.checked,
@@ -366,6 +466,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
               <span className="canvas-node-inline-buttons-label">Btn</span>
             </label>
           )}
+          {!isLinkedMasterField && (
           <button
             className="btn btn-sm canvas-node-delete"
             onClick={(event) => {
@@ -377,6 +478,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
           >
             <i className="bi bi-trash" />
           </button>
+          )}
         </div>
       </div>
 
@@ -390,11 +492,19 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
       {isContainer && (
         <div
           className={`nested-dropzone ${isRow ? 'nested-dropzone--row' : ''} ${isColumn ? 'nested-dropzone--column' : ''}`}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.stopPropagation();
-            onDropNode(event, node.id);
-          }}
+          onDragOver={
+            isLinkedMasterField
+              ? undefined
+              : (event) => event.preventDefault()
+          }
+          onDrop={
+            isLinkedMasterField
+              ? undefined
+              : (event) => {
+                  event.stopPropagation();
+                  onDropNode(event, node.id);
+                }
+          }
         >
           {isRow && (
             <div className="nested-dropzone-label">
@@ -420,6 +530,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
                         >
                           <CanvasNode
                             inheritedButtonsInline={rowButtonsInline}
+                            linkedMasterFormId={linkedMasterFormId}
                             node={child}
                             onDropNode={onDropNode}
                           />
@@ -437,6 +548,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
                       >
                         <CanvasNode
                           inheritedButtonsInline={rowButtonsInline}
+                          linkedMasterFormId={linkedMasterFormId}
                           node={child}
                           onDropNode={onDropNode}
                         />
@@ -450,6 +562,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
               <div className="d-flex flex-column gap-2">{renderColumnChildren()}</div>
             )
           ) : (
+            !isLinkedMasterField && (
             <div className={`empty-nested-state ${isRow ? 'empty-nested-state--row' : ''} ${isColumn ? 'empty-nested-state--column' : ''}`}>
               {isRow && (
                 <>
@@ -464,6 +577,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
               {isColumn && <p>Drop fields into this column</p>}
               {!isRow && !isColumn && <p>Drop components into this container</p>}
             </div>
+            )
           )}
         </div>
       )}
@@ -475,7 +589,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
           fieldLabel={node.label}
           onClose={() => setButtonSettingsOpen(false)}
           onSave={(settings) => {
-            updateField(node.id, {
+            applyFieldPatch(node.id, {
               metadata: {
                 ...(node.metadata || {}),
                 buttonColor: settings.buttonColor,
@@ -496,7 +610,7 @@ function CanvasNode({ node, onDropNode, inheritedButtonsInline = false }) {
           labelKey={node.apiBinding?.labelKey || 'label'}
           onClose={() => setOptionsDialogOpen(false)}
           onSave={(nextOptions, meta) => {
-            updateField(node.id, {
+            applyFieldPatch(node.id, {
               apiBinding: {
                 ...(node.apiBinding || {}),
                 sourceType: 'static',

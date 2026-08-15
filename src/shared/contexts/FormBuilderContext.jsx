@@ -11,9 +11,16 @@ import { formService } from '../services/formService';
 import { masterFormService } from '../services/masterFormService';
 import { exportJson, importJson, syncFormFields } from '../utils/formSerializer';
 import {
+  createMasterFormRefNode,
+  getMasterFormById,
+  isMasterFormRef,
+} from '../utils/masterFormUtils';
+import {
+  clearBuilderReturnProjectId,
   getBuilderReturnProjectId,
   setBuilderReturnProjectId,
 } from '../utils/builderNavigation';
+import { deleteFormSubmissions } from '../utils/formSubmissionStorage';
 import {
   appendNodeToParent,
   cloneDeep,
@@ -26,6 +33,27 @@ import {
   removeNodeById,
   updateNodeById,
 } from '../utils/tree';
+
+const updateMasterRefNames = (nodes = [], masterFormId, name) =>
+  nodes.map((node) => {
+    if (isMasterFormRef(node) && node.metadata?.masterFormId === masterFormId) {
+      return {
+        ...node,
+        label: name,
+        metadata: {
+          ...node.metadata,
+          masterFormName: name,
+        },
+      };
+    }
+    if (node.children?.length) {
+      return {
+        ...node,
+        children: updateMasterRefNames(node.children, masterFormId, name),
+      };
+    }
+    return node;
+  });
 
 const cloneNodeWithNewIds = (node) => {
   const cloned = cloneDeep(node);
@@ -41,6 +69,7 @@ const cloneNodeWithNewIds = (node) => {
 export function FormBuilderProvider({ children }) {
   const [forms, setForms] = useState(() => formService.loadAll());
   const [masterForms, setMasterForms] = useState(() => masterFormService.loadAll());
+  const [editingMasterFormId, setEditingMasterFormId] = useState(null);
   const [activeFormId, setActiveFormId] = useState(() => formService.loadAll()[0]?.id || null);
   const [selectedFieldId, setSelectedFieldId] = useState(null);
   const [clipboardField, setClipboardField] = useState(null);
@@ -48,6 +77,7 @@ export function FormBuilderProvider({ children }) {
   const editBaselineRef = useRef(null);
   const preserveEditSessionRef = useRef(false);
   const previewDraftRef = useRef(null);
+  const masterEditHostFormRef = useRef(null);
 
   useEffect(() => {
     formService.saveAll(forms);
@@ -216,6 +246,13 @@ export function FormBuilderProvider({ children }) {
   };
 
   const clearCanvas = () => {
+    if (editingMasterFormId) {
+      setEditingMasterFormId(null);
+      restoreMasterEditHostForm();
+      setSelectedFieldId(null);
+      return;
+    }
+
     updateActiveForm((form) =>
       syncFormFields({
         ...form,
@@ -228,6 +265,7 @@ export function FormBuilderProvider({ children }) {
       }),
     );
     setSelectedFieldId(null);
+    setEditingMasterFormId(null);
   };
 
   const saveVersionSnapshot = (note = 'Snapshot saved') => {
@@ -246,8 +284,78 @@ export function FormBuilderProvider({ children }) {
     }));
   };
 
+  const restoreMasterEditHostForm = () => {
+    const host = masterEditHostFormRef.current;
+    if (!host?.id) {
+      return;
+    }
+
+    setForms((current) =>
+      current.map((form) => (form.id === host.id ? syncFormFields(cloneDeep(host)) : form)),
+    );
+    masterEditHostFormRef.current = null;
+  };
+
+  const updateEditingMasterForm = (name, { finalize = false } = {}) => {
+    if (!editingMasterFormId) {
+      return { ok: false, message: 'Not editing a master form.' };
+    }
+
+    const trimmed = name?.trim();
+    if (!trimmed) {
+      return { ok: false, message: 'Form name is required.' };
+    }
+
+    const children = activeForm.layout?.children || [];
+    if (!children.length) {
+      return { ok: false, message: 'Add at least one field to the canvas before saving.' };
+    }
+
+    setMasterForms((current) => {
+      const next = current.map((item) =>
+        item.id === editingMasterFormId
+          ? {
+              ...item,
+              name: trimmed,
+              children: cloneDeep(children),
+              updatedAt: new Date().toISOString(),
+            }
+          : item,
+      );
+      masterFormService.saveAll(next);
+      return next;
+    });
+    setForms((current) =>
+      current.map((form) =>
+        syncFormFields({
+          ...form,
+          layout: {
+            ...form.layout,
+            children: updateMasterRefNames(form.layout.children, editingMasterFormId, trimmed),
+          },
+        }),
+      ),
+    );
+
+    if (finalize) {
+      setEditingMasterFormId(null);
+      restoreMasterEditHostForm();
+    }
+
+    return { ok: true, updated: true };
+  };
+
   /** Persist active form immediately (including project association) so it appears after Back. */
   const persistActiveForm = (note = 'Form saved', { trackVersion = true } = {}) => {
+    if (editingMasterFormId) {
+      const children = activeForm.layout?.children || [];
+      const name = activeForm.name?.trim();
+      if (name && children.length) {
+        updateEditingMasterForm(name, { finalize: false });
+      }
+      return;
+    }
+
     const projectId =
       activeForm.metadata?.projectId || getBuilderReturnProjectId() || null;
 
@@ -393,7 +501,7 @@ export function FormBuilderProvider({ children }) {
     setSelectedFieldId(field.id);
   };
 
-  const saveMasterForm = (name) => {
+  const saveMasterForm = (name, { finalize = true } = {}) => {
     const trimmed = name?.trim();
     if (!trimmed) {
       return { ok: false, message: 'Form name is required.' };
@@ -404,9 +512,16 @@ export function FormBuilderProvider({ children }) {
       return { ok: false, message: 'Add at least one field to the canvas before saving.' };
     }
 
+    const projectId = activeForm.metadata?.projectId || getBuilderReturnProjectId() || null;
+
+    if (editingMasterFormId) {
+      return updateEditingMasterForm(trimmed, { finalize });
+    }
+
     const entry = {
       id: `master_${crypto.randomUUID()}`,
       name: trimmed,
+      projectId,
       children: cloneDeep(children),
       createdAt: new Date().toISOString(),
     };
@@ -417,6 +532,31 @@ export function FormBuilderProvider({ children }) {
       return next;
     });
 
+    return { ok: true, updated: false };
+  };
+
+  const loadMasterFormForEdit = (masterFormId) => {
+    const master = getMasterFormById(masterForms, masterFormId);
+    if (!master) {
+      return { ok: false, message: 'Master form not found.' };
+    }
+
+    if (!editingMasterFormId) {
+      masterEditHostFormRef.current = cloneDeep(activeForm);
+    }
+
+    setEditingMasterFormId(masterFormId);
+    updateActiveForm((form) =>
+      syncFormFields({
+        ...form,
+        name: master.name,
+        layout: {
+          ...form.layout,
+          children: cloneDeep(master.children),
+        },
+      }),
+    );
+    setSelectedFieldId(null);
     return { ok: true };
   };
 
@@ -434,40 +574,28 @@ export function FormBuilderProvider({ children }) {
 
   const insertMasterForm = (masterFormId, parentId = selectedContainerId, options = {}) => {
     const master = masterForms.find((item) => item.id === masterFormId);
-    if (!master?.children?.length) {
+    if (!master) {
       return;
     }
 
-    const clonedNodes = master.children.map((node) => cloneNodeWithNewIds(node));
+    const refNode = createMasterFormRefNode(master);
     const insertAtIndex =
       options.insertAtIndex === undefined || options.insertAtIndex === null
         ? null
         : Number(options.insertAtIndex);
 
-    updateActiveForm((form) => {
-      let children = form.layout.children;
-      clonedNodes.forEach((node, index) => {
-        if (insertAtIndex !== null && !Number.isNaN(insertAtIndex) && parentId !== 'root') {
-          children = insertNodeToParentAtIndex(
-            children,
-            parentId,
-            node,
-            insertAtIndex + index,
-          );
-        } else {
-          children = appendNodeToParent(children, parentId, node);
-        }
-      });
-      return {
-        ...form,
-        layout: {
-          ...form.layout,
-          children,
-        },
-      };
-    });
+    updateActiveForm((form) => ({
+      ...form,
+      layout: {
+        ...form.layout,
+        children:
+          insertAtIndex !== null && !Number.isNaN(insertAtIndex) && parentId !== 'root'
+            ? insertNodeToParentAtIndex(form.layout.children, parentId, refNode, insertAtIndex)
+            : appendNodeToParent(form.layout.children, parentId, refNode),
+      },
+    }));
 
-    setSelectedFieldId(clonedNodes[0]?.id || null);
+    setSelectedFieldId(refNode.id);
   };
 
   const updateField = (fieldId, patch) => {
@@ -481,6 +609,26 @@ export function FormBuilderProvider({ children }) {
         })),
       },
     }));
+  };
+
+  const updateMasterFormField = (masterFormId, fieldId, patch) => {
+    setMasterForms((current) => {
+      const next = current.map((master) => {
+        if (master.id !== masterFormId) {
+          return master;
+        }
+        return {
+          ...master,
+          children: updateNodeById(master.children, fieldId, (node) => ({
+            ...node,
+            ...(typeof patch === 'function' ? patch(node) : patch),
+          })),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      masterFormService.saveAll(next);
+      return next;
+    });
   };
 
   const deleteField = (fieldId) => {
@@ -612,6 +760,49 @@ export function FormBuilderProvider({ children }) {
       }
       return next;
     });
+    deleteFormSubmissions([formId]);
+  };
+
+  const deleteProjectRelatedData = (projectId) => {
+    if (!projectId) {
+      return;
+    }
+
+    if (getBuilderReturnProjectId() === projectId) {
+      clearBuilderReturnProjectId();
+    }
+
+    setMasterForms((current) => {
+      const removedMasterIds = new Set(
+        current.filter((item) => item.projectId === projectId).map((item) => item.id),
+      );
+      if (editingMasterFormId && removedMasterIds.has(editingMasterFormId)) {
+        setEditingMasterFormId(null);
+      }
+      const next = current.filter((item) => item.projectId !== projectId);
+      masterFormService.saveAll(next);
+      return next;
+    });
+
+    setForms((current) => {
+      const removedForms = current.filter((form) => form.metadata?.projectId === projectId);
+      const removedFormIds = removedForms.map((form) => form.id);
+      deleteFormSubmissions(removedFormIds);
+
+      removedForms.forEach((form) => {
+        if (editBaselineRef.current?.formId === form.id) {
+          editBaselineRef.current = null;
+        }
+      });
+
+      const next = current.filter((form) => form.metadata?.projectId !== projectId);
+      if (activeFormId && removedFormIds.includes(activeFormId)) {
+        setActiveFormId(next[0]?.id ?? null);
+        setSelectedFieldId(null);
+        setEditingMasterFormId(null);
+      }
+      return next;
+    });
   };
 
   const publishForm = (formId = activeForm.id) => {
@@ -677,6 +868,7 @@ export function FormBuilderProvider({ children }) {
   const value = {
     forms,
     masterForms,
+    editingMasterFormId,
     activeForm,
     activeFormId,
     selectedFieldId,
@@ -705,9 +897,11 @@ export function FormBuilderProvider({ children }) {
     autoSaveActiveForm,
     createField,
     saveMasterForm,
+    loadMasterFormForEdit,
     deleteMasterForm,
     insertMasterForm,
     updateField,
+    updateMasterFormField,
     deleteField,
     duplicateField,
     moveField,
@@ -716,6 +910,7 @@ export function FormBuilderProvider({ children }) {
     pasteField,
     duplicateForm,
     deleteForm,
+    deleteProjectRelatedData,
     publishForm,
     draftForm,
     importCurrentFormJson,

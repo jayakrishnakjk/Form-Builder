@@ -34,3 +34,24 @@ export const saveFormSubmission = (formId, payload) => {
     );
   }
 };
+
+export const deleteFormSubmissions = (formIds = []) => {
+  const ids = formIds.filter(Boolean);
+  if (!ids.length) {
+    return;
+  }
+
+  try {
+    const raw = localStorage.getItem(FORM_SUBMISSIONS_KEY);
+    if (!raw) {
+      return;
+    }
+    const store = JSON.parse(raw);
+    ids.forEach((formId) => {
+      delete store[formId];
+    });
+    localStorage.setItem(FORM_SUBMISSIONS_KEY, JSON.stringify(store));
+  } catch {
+    // Ignore invalid submission storage.
+  }
+};
