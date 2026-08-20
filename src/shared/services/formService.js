@@ -1,20 +1,4 @@
 import { FORM_STORAGE_KEY } from '../constants/storageKeys';
+import { createSupabaseCollectionService } from './supabaseCollection';
 
-export const formService = {
-  loadAll() {
-    const raw = localStorage.getItem(FORM_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify([]));
-      return [];
-    }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return [];
-    }
-  },
-  saveAll(forms) {
-    localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(forms));
-    return forms;
-  },
-};
+export const formService = createSupabaseCollectionService('forms', FORM_STORAGE_KEY);

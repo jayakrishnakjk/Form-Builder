@@ -4,11 +4,30 @@ import { createProject } from '../models/project';
 import { projectService } from '../services/projectService';
 
 export function ProjectProvider({ children }) {
-  const [projects, setProjects] = useState(() => projectService.loadAll());
+  const [projects, setProjects] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    projectService.loadAll().then((loaded) => {
+      if (!cancelled) {
+        setProjects(loaded);
+        setIsLoaded(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Don't persist until the initial load finishes, otherwise the empty
+    // initial state would wipe the remote data.
+    if (!isLoaded) {
+      return;
+    }
     projectService.saveAll(projects);
-  }, [projects]);
+  }, [projects, isLoaded]);
 
   const addProject = useCallback((payload) => {
     const project = createProject(payload);

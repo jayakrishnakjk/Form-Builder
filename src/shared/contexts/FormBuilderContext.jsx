@@ -67,10 +67,11 @@ const cloneNodeWithNewIds = (node) => {
 };
 
 export function FormBuilderProvider({ children }) {
-  const [forms, setForms] = useState(() => formService.loadAll());
-  const [masterForms, setMasterForms] = useState(() => masterFormService.loadAll());
+  const [forms, setForms] = useState([]);
+  const [masterForms, setMasterForms] = useState([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [editingMasterFormId, setEditingMasterFormId] = useState(null);
-  const [activeFormId, setActiveFormId] = useState(() => formService.loadAll()[0]?.id || null);
+  const [activeFormId, setActiveFormId] = useState(null);
   const [selectedFieldId, setSelectedFieldId] = useState(null);
   const [clipboardField, setClipboardField] = useState(null);
   const [jsonDraft, setJsonDraft] = useState('');
@@ -80,11 +81,34 @@ export function FormBuilderProvider({ children }) {
   const masterEditHostFormRef = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
+    Promise.all([formService.loadAll(), masterFormService.loadAll()]).then(
+      ([loadedForms, loadedMasterForms]) => {
+        if (cancelled) {
+          return;
+        }
+        setForms(loadedForms);
+        setMasterForms(loadedMasterForms);
+        setActiveFormId((current) => current || loadedForms[0]?.id || null);
+        setIsLoaded(true);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Don't persist until the initial load finishes, otherwise the empty
+    // initial state would wipe the remote data.
+    if (!isLoaded) {
+      return;
+    }
     formService.saveAll(forms);
     if (!activeFormId && forms[0]?.id) {
       setActiveFormId(forms[0].id);
     }
-  }, [forms, activeFormId]);
+  }, [forms, activeFormId, isLoaded]);
 
   const activeForm = useMemo(
     () => forms.find((form) => form.id === activeFormId) || forms[0] || createEmptyForm(),
