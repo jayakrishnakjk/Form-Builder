@@ -1,36 +1,17 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import FormPreview from '@/features/preview/components/FormPreview';
+import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import { useLoadedForm } from '@/shared/hooks/useLoadedForm';
-import { getEmbeddedFormFromHash } from '@/shared/utils/embedFormData';
 
 function EmbedPage() {
   const { formId } = useParams();
-  const { hash } = useLocation();
+  const { isLoaded } = useFormBuilder();
+  const form = useLoadedForm(formId);
 
-  // Cross-site iframes get partitioned localStorage, so the form definition
-  // travels in the URL hash; local storage is only a same-site fallback.
-  const [hashState, setHashState] = useState({ form: null, resolved: false });
-  const storedForm = useLoadedForm(formId);
-
-  useEffect(() => {
-    let active = true;
-    setHashState({ form: null, resolved: false });
-    getEmbeddedFormFromHash(hash).then((form) => {
-      if (active) {
-        setHashState({ form, resolved: true });
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [hash]);
-
-  if (!hashState.resolved) {
+  // Forms load asynchronously from Supabase; wait before deciding "not found".
+  if (!isLoaded) {
     return null;
   }
-
-  const form = hashState.form || storedForm;
 
   if (!form) {
     return (

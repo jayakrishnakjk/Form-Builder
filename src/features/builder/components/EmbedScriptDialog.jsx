@@ -1,41 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '@/shared/hooks/useToast';
-import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import {
   buildEmbedSnippet,
-  encodeResolvedFormForEmbed,
   EMBED_SNIPPET_TABS,
   getEmbedSnippetLabel,
 } from '@/shared/utils/embedScript';
 
-function EmbedScriptDialog({ formId, formName, form, onClose }) {
+function EmbedScriptDialog({ formId, formName, onClose }) {
   const { showToast } = useToast();
-  const { masterForms } = useFormBuilder();
   const [activeTab, setActiveTab] = useState('html');
   const [copied, setCopied] = useState(false);
-  const [formData, setFormData] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    encodeResolvedFormForEmbed(form, masterForms).then((encoded) => {
-      if (active) {
-        setFormData(encoded);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [form, masterForms]);
 
   const embedSnippet = useMemo(
     () =>
       buildEmbedSnippet(activeTab, {
         formId,
         formName,
-        formData,
       }),
-    [activeTab, formId, formName, formData],
+    [activeTab, formId, formName],
   );
 
   const handleCopy = async () => {

@@ -1,32 +1,13 @@
-import { encodeFormForEmbed } from './embedFormData';
-import { resolveLayoutWithMasterForms } from './masterFormUtils';
-
-// Master form refs are expanded here because the embed page cannot
-// read master forms from the builder's (partitioned) localStorage.
-export const encodeResolvedFormForEmbed = (form, masterForms = []) => {
-  if (!form) {
-    return Promise.resolve('');
-  }
-  return encodeFormForEmbed({
-    ...form,
-    layout: {
-      ...form.layout,
-      children: resolveLayoutWithMasterForms(form.layout?.children || [], masterForms),
-    },
-  });
-};
-
 const getEmbedConfig = ({
   baseUrl = typeof window !== 'undefined' ? window.location.origin : '',
   formId,
   formName = 'Form',
-  formData = '',
 }) => {
   const origin = baseUrl.replace(/\/$/, '');
   const safeTitle = String(formName).replace(/"/g, '&quot;');
   const containerId = `formbuilder-embed-${formId}`;
 
-  return { origin, safeTitle, formId, formName, containerId, formData };
+  return { origin, safeTitle, formId, formName, containerId };
 };
 
 export const EMBED_SNIPPET_TABS = [
@@ -37,7 +18,7 @@ export const EMBED_SNIPPET_TABS = [
 ];
 
 export const buildEmbedScript = (options) => {
-  const { origin, safeTitle, formId, formData } = getEmbedConfig(options);
+  const { origin, safeTitle, formId } = getEmbedConfig(options);
 
   return `<script
   async
@@ -45,12 +26,11 @@ export const buildEmbedScript = (options) => {
   data-form-id="${formId}"
   data-api-url="${origin}"
   data-form-title="${safeTitle}"
-  data-form-data="${formData}"
 ></script>`;
 };
 
 export const buildReactEmbedSnippet = (options) => {
-  const { origin, safeTitle, formId, containerId, formData } = getEmbedConfig(options);
+  const { origin, safeTitle, formId, containerId } = getEmbedConfig(options);
 
   return `import { useEffect } from 'react';
 
@@ -63,7 +43,6 @@ export function EmbeddedForm() {
     script.setAttribute('data-api-url', '${origin}');
     script.setAttribute('data-form-title', '${safeTitle}');
     script.setAttribute('data-container-id', '${containerId}');
-    script.setAttribute('data-form-data', '${formData}');
     document.body.appendChild(script);
 
     return () => {
@@ -77,7 +56,7 @@ export function EmbeddedForm() {
 };
 
 export const buildAngularEmbedSnippet = (options) => {
-  const { origin, safeTitle, formId, containerId, formData } = getEmbedConfig(options);
+  const { origin, safeTitle, formId, containerId } = getEmbedConfig(options);
 
   return `import { Component, OnDestroy, OnInit } from '@angular/core';
 
@@ -97,7 +76,6 @@ export class EmbeddedFormComponent implements OnInit, OnDestroy {
     this.script.setAttribute('data-api-url', '${origin}');
     this.script.setAttribute('data-form-title', '${safeTitle}');
     this.script.setAttribute('data-container-id', '${containerId}');
-    this.script.setAttribute('data-form-data', '${formData}');
     document.body.appendChild(this.script);
   }
 
@@ -109,7 +87,7 @@ export class EmbeddedFormComponent implements OnInit, OnDestroy {
 };
 
 export const buildBootstrapEmbedSnippet = (options) => {
-  const { origin, safeTitle, formId, containerId, formName, formData } = getEmbedConfig(options);
+  const { origin, safeTitle, formId, containerId, formName } = getEmbedConfig(options);
 
   return `<div class="container py-4">
   <div class="card shadow-sm border-0">
@@ -123,7 +101,6 @@ export const buildBootstrapEmbedSnippet = (options) => {
         data-api-url="${origin}"
         data-form-title="${safeTitle}"
         data-container-id="${containerId}"
-        data-form-data="${formData}"
       ></script>
     </div>
   </div>

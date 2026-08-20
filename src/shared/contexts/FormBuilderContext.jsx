@@ -892,6 +892,7 @@ export function FormBuilderProvider({ children }) {
   const value = {
     forms,
     masterForms,
+    isLoaded,
     editingMasterFormId,
     activeForm,
     activeFormId,
