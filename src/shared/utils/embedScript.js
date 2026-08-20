@@ -3,30 +3,28 @@ import { resolveLayoutWithMasterForms } from './masterFormUtils';
 
 // Master form refs are expanded here because the embed page cannot
 // read master forms from the builder's (partitioned) localStorage.
-const resolveFormForEmbed = (form, masterForms) => {
+export const encodeResolvedFormForEmbed = (form, masterForms = []) => {
   if (!form) {
-    return null;
+    return Promise.resolve('');
   }
-  return {
+  return encodeFormForEmbed({
     ...form,
     layout: {
       ...form.layout,
       children: resolveLayoutWithMasterForms(form.layout?.children || [], masterForms),
     },
-  };
+  });
 };
 
 const getEmbedConfig = ({
   baseUrl = typeof window !== 'undefined' ? window.location.origin : '',
   formId,
   formName = 'Form',
-  form = null,
-  masterForms = [],
+  formData = '',
 }) => {
   const origin = baseUrl.replace(/\/$/, '');
   const safeTitle = String(formName).replace(/"/g, '&quot;');
   const containerId = `formbuilder-embed-${formId}`;
-  const formData = encodeFormForEmbed(resolveFormForEmbed(form, masterForms));
 
   return { origin, safeTitle, formId, formName, containerId, formData };
 };
