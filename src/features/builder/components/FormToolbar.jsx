@@ -178,6 +178,7 @@ function FormToolbar() {
 
         {showEmbedDialog && activeForm?.id && (
           <EmbedScriptDialog
+            form={activeForm}
             formId={activeForm.id}
             formName={activeForm.name}
             onClose={() => setShowEmbedDialog(false)}

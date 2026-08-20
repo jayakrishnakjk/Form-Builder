@@ -7,7 +7,7 @@ import {
   getEmbedSnippetLabel,
 } from '@/shared/utils/embedScript';
 
-function EmbedScriptDialog({ formId, formName, onClose }) {
+function EmbedScriptDialog({ formId, formName, form, onClose }) {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('html');
   const [copied, setCopied] = useState(false);
@@ -17,8 +17,9 @@ function EmbedScriptDialog({ formId, formName, onClose }) {
       buildEmbedSnippet(activeTab, {
         formId,
         formName,
+        form,
       }),
-    [activeTab, formId, formName],
+    [activeTab, formId, formName, form],
   );
 
   const handleCopy = async () => {

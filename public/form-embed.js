@@ -53,8 +53,14 @@
     }
   }
 
+  var formData = script.getAttribute('data-form-data') || '';
+
   var iframe = document.createElement('iframe');
-  iframe.src = baseUrl + '/embed/' + encodeURIComponent(formId);
+  iframe.src =
+    baseUrl +
+    '/embed/' +
+    encodeURIComponent(formId) +
+    (formData ? '#data=' + formData : '');
   iframe.title = script.getAttribute('data-form-title') || 'Embedded Form';
   iframe.style.width = script.getAttribute('data-width') || '100%';
   iframe.style.height = script.getAttribute('data-height') || '640px';

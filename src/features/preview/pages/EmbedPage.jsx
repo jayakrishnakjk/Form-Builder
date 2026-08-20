@@ -1,10 +1,18 @@
-import { useParams } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import FormPreview from '@/features/preview/components/FormPreview';
 import { useLoadedForm } from '@/shared/hooks/useLoadedForm';
+import { getEmbeddedFormFromHash } from '@/shared/utils/embedFormData';
 
 function EmbedPage() {
   const { formId } = useParams();
-  const form = useLoadedForm(formId);
+  const { hash } = useLocation();
+
+  // Cross-site iframes get partitioned localStorage, so the form definition
+  // travels in the URL hash; local storage is only a same-site fallback.
+  const embeddedForm = useMemo(() => getEmbeddedFormFromHash(hash), [hash]);
+  const storedForm = useLoadedForm(formId);
+  const form = embeddedForm || storedForm;
 
   if (!form) {
     return (
