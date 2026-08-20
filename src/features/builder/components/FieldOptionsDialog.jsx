@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { apiClient } from '@/shared/services/apiClient';
 import { useToast } from '@/shared/hooks/useToast';
@@ -97,15 +97,9 @@ function FieldOptionsDialog({
   const [responseKeys, setResponseKeys] = useState([]);
   const [showOptionsList, setShowOptionsList] = useState(() => options.length > 0);
 
-  useEffect(() => {
-    setDraft(cloneOptions(options));
-  }, [options]);
-
-  useEffect(() => {
-    setFetchUrl(apiEndpoint);
-    setLabelKey(initialLabelKey || 'label');
-    setValueKey(initialValueKey || 'value');
-  }, [apiEndpoint, initialLabelKey, initialValueKey]);
+  // No prop→state resync here: the dialog remounts on every open (so state
+  // initializers pick up fresh props), and resyncing while open would wipe
+  // the user's unsaved edits whenever auto-save clones the form tree.
 
   const updateRow = (index, key, nextValue) => {
     setDraft((current) =>
