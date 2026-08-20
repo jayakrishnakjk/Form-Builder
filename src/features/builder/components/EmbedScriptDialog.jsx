@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useToast } from '@/shared/hooks/useToast';
+import { useFormBuilder } from '@/shared/hooks/useFormBuilder';
 import {
   buildEmbedSnippet,
   EMBED_SNIPPET_TABS,
@@ -9,6 +10,7 @@ import {
 
 function EmbedScriptDialog({ formId, formName, form, onClose }) {
   const { showToast } = useToast();
+  const { masterForms } = useFormBuilder();
   const [activeTab, setActiveTab] = useState('html');
   const [copied, setCopied] = useState(false);
 
@@ -18,8 +20,9 @@ function EmbedScriptDialog({ formId, formName, form, onClose }) {
         formId,
         formName,
         form,
+        masterForms,
       }),
-    [activeTab, formId, formName, form],
+    [activeTab, formId, formName, form, masterForms],
   );
 
   const handleCopy = async () => {
