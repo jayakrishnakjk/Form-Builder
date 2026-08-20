@@ -34,8 +34,8 @@ export const validateField = (field, value, formData = {}) => {
     errors.push(`${field.label} must be a valid email.`);
   }
 
-  if (validation.phone && value && !/^\+?[0-9()\-\s]{7,20}$/.test(value)) {
-    errors.push(`${field.label} must be a valid phone number.`);
+  if ((validation.phone || field.type === 'phone') && value && !/^\d{10}$/.test(value)) {
+    errors.push(`${field.label} must be a valid 10 digit phone number.`);
   }
 
   if ((validation.number || field.type === 'number') && value !== '' && Number.isNaN(Number(value))) {

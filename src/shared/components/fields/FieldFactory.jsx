@@ -93,14 +93,15 @@ function FieldFactory({ field, value, error, onChange, onBlur, onClick, formData
 
   const renderControl = () => {
     switch (field.type) {
+      case 'phone':
+        return <input {...commonProps} inputMode="numeric" maxLength={10} onChange={(event) => onChange(event.target.value.replace(/\D/g, '').slice(0, 10))} type="tel" />;
       case 'text':
       case 'email':
       case 'password':
-      case 'phone':
       case 'hidden':
       case 'date':
       case 'time':
-        return <input {...commonProps} onChange={(event) => onChange(event.target.value)} type={field.type === 'phone' ? 'tel' : field.type} />;
+        return <input {...commonProps} onChange={(event) => onChange(event.target.value)} type={field.type} />;
       case 'datetime':
         return <input {...commonProps} onChange={(event) => onChange(event.target.value)} type="datetime-local" />;
       case 'number':
